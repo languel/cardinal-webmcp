@@ -23,13 +23,13 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release download classroom-v3 --repo "$GITHUB_REPOSITORY" --pattern cardinal-wasm.tar.gz
+          gh release download classroom-v4 --repo "$GITHUB_REPOSITORY" --pattern cardinal-wasm.tar.gz
           sha256sum --check classroom/cardinal-wasm.sha256
       - name: Assemble the classroom site
         run: |
           mkdir -p _site/rack
           tar -xzf cardinal-wasm.tar.gz -C _site
-          awk '/<script type=/{print "    <script src=\"./patch-links.js\"></script>"} {print}' src/emscripten/CardinalNative.html > _site/index.html
+          awk -v build="$GITHUB_SHA" '/<script type=/{print "    <script src=\"./patch-links.js?v=" build "\" data-cardinal-build=\"" build "\"></script>"} {print}' src/emscripten/CardinalNative.html > _site/index.html
           cp classroom/patch-links.js classroom/classroom-guide.html _site/
           cp classroom/rack-redirect.html _site/rack/index.html
           cp LICENSE _site/LICENSE.txt

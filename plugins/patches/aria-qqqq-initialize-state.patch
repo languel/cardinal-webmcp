@@ -1,0 +1,21 @@
+--- Qqqq.cpp
++++ Qqqq.cpp
+@@ -92,12 +92,12 @@
+     std::array<std::array<bool, 12>, 16> scale;
+     std::array<bool, 12> lastExternalScale;
+     std::array<bool, 12> litKeys;
+-    std::array<bool, 12> receivedExpanderScale;
+-    std::array<bool, 12> lastReceivedExpanderScale;
+-    std::array<std::array<float, 16>, 4> inputVoltage;
+-    std::array<std::array<float, 16>, 4> shVoltage;
+-    std::array<int, 4> inputChannels;
+-    std::array<int, 4> shChannels;
++    std::array<bool, 12> receivedExpanderScale{};
++    std::array<bool, 12> lastReceivedExpanderScale{};
++    std::array<std::array<float, 16>, 4> inputVoltage{};
++    std::array<std::array<float, 16>, 4> shVoltage{};
++    std::array<int, 4> inputChannels{};
++    std::array<int, 4> shChannels{};
+     Lcd::LcdStatus lcdStatus;
+     dsp::ClockDivider processDivider;
+     dsp::ClockDivider lcdDivider;

@@ -106,6 +106,9 @@
     <script type='text/javascript'>
       'use strict';
 
+      const build = document.querySelector('script[data-cardinal-build]')?.dataset.cardinalBuild;
+      const withBuild = filename => build ? filename + '?v=' + build : filename;
+
       var wasmErrors = [];
       var errorElement = document.getElementById('error');
       var statusElement = document.getElementById('status');
@@ -139,13 +142,13 @@
             canvasWrapper.style.display = 'block';
             window.dispatchEvent(new Event('resize'));
             if (document.modelContext?.registerTool && Module._cardinalWebMCP) {
-              import('./CardinalWebMCP.mjs')
+              import(withBuild('./CardinalWebMCP.mjs'))
                 .then(({ registerCardinalTools }) => registerCardinalTools(document.modelContext, Module))
                 .catch(error => console.error('Cardinal WebMCP registration failed', error));
             }
           },
           locateFile: function(p,_) {
-            return simdSupported ? p : p.replace("CardinalNative",  "CardinalNative-nosimd");
+            return withBuild(simdSupported ? p : p.replace("CardinalNative", "CardinalNative-nosimd"));
           },
           canvas: (function() {
             var canvas = document.getElementById('canvas');
@@ -203,7 +206,7 @@
         }
         var jsModuleScript = document.createElement('script');
         jsModuleScript.setAttribute('async', true);
-        jsModuleScript.setAttribute('src', jsModuleName);
+        jsModuleScript.setAttribute('src', withBuild(jsModuleName));
         jsModuleScript.setAttribute('type','text/javascript');
         if (window.cardinalClassroomLoadPatch) {
           const params = new URLSearchParams(location.search);

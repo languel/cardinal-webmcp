@@ -2216,6 +2216,20 @@ $(BUILD_DIR)/ArableInstruments/%.o: ArableInstruments/%
 		-Wno-class-memaccess \
 		-Wno-unused-local-typedefs
 
+# Qqqq can process a connected hold input before the first sample has been captured.
+$(BUILD_DIR)/patched/AriaModules/Qqqq.cpp: AriaModules/src/Qqqq.cpp patches/aria-qqqq-initialize-state.patch
+	@mkdir -p "$(dir $@)"
+	patch -s -o "$@" "$<" < patches/aria-qqqq-initialize-state.patch
+
+$(BUILD_DIR)/AriaModules/src/Qqqq.cpp.o: $(BUILD_DIR)/patched/AriaModules/Qqqq.cpp
+	@mkdir -p "$(dir $@)"
+	@echo "Compiling $<"
+	$(SILENT)$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@ \
+		-IAriaModules/src \
+		$(foreach m,$(ARIA_CUSTOM),$(call custom_module_names,$(m),Aria)) \
+		-DpluginInstance=pluginInstance__Aria \
+		-Wno-cast-function-type
+
 $(BUILD_DIR)/AriaModules/%.cpp.o: AriaModules/%.cpp
 	-@mkdir -p "$(shell dirname $(BUILD_DIR)/$<)"
 	@echo "Compiling $<"
