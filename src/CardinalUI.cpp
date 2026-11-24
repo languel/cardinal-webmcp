@@ -61,6 +61,10 @@
 # include "extra/ScopedValueSetter.hpp"
 #endif
 
+#if defined(DISTRHO_OS_WASM) && ! CARDINAL_VARIANT_MINI
+void cardinalSetWebMCPContext(rack::Context* context);
+#endif
+
 namespace rack {
 #ifdef DISTRHO_OS_WASM
 namespace asset {
@@ -490,10 +494,16 @@ public:
         rack::contextSet(nullptr);
 
         WindowParametersSetCallback(context->window, this);
+       #if defined(DISTRHO_OS_WASM) && ! CARDINAL_VARIANT_MINI
+        cardinalSetWebMCPContext(context);
+       #endif
     }
 
     ~CardinalUI() override
     {
+       #if defined(DISTRHO_OS_WASM) && ! CARDINAL_VARIANT_MINI
+        cardinalSetWebMCPContext(nullptr);
+       #endif
         rack::contextSet(context);
 
         context->nativeWindowId = 0;

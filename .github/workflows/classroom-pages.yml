@@ -1,0 +1,49 @@
+name: Classroom Pages
+
+on:
+  workflow_dispatch:
+
+concurrency:
+  group: classroom-pages
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  package:
+    permissions:
+      contents: read
+      pages: read
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/configure-pages@v5
+      - name: Download and verify Cardinal build
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release download classroom-v1 --repo "$GITHUB_REPOSITORY" --pattern cardinal-wasm.tar.gz
+          sha256sum --check classroom/cardinal-wasm.sha256
+      - name: Assemble the classroom site
+        run: |
+          mkdir -p _site/rack
+          tar -xzf cardinal-wasm.tar.gz -C _site/rack
+          cp classroom/index.html _site/index.html
+          cp LICENSE _site/LICENSE.txt
+          cp patches/fm-filter-sequence.vcv classroom/fm-filter-sequence.html _site/rack/
+      - uses: actions/upload-pages-artifact@v4
+        with:
+          path: _site
+  deploy:
+    needs: package
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.publish.outputs.page_url }}
+    steps:
+      - uses: actions/deploy-pages@v4
+        id: publish

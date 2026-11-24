@@ -85,6 +85,9 @@ FILES_UI  = CardinalUI.cpp
 FILES_UI += glfw.cpp
 FILES_UI += MenuBar.cpp
 FILES_UI += Window.cpp
+ifeq ($(CARDINAL_VARIANT)$(WASM),nativetrue)
+FILES_UI += CardinalWebMCP.cpp
+endif
 endif
 
 ifeq ($(WINDOWS),true)
@@ -131,8 +134,15 @@ RACK_EXTRA_LIBS += $(SURGE_DEP_PATH)/libs/fmt/libfmt.a
 endif
 RACK_EXTRA_LIBS += $(SURGE_DEP_PATH)/libs/sqlite-3.23.3/libsqlite.a
 RACK_EXTRA_LIBS += $(SURGE_DEP_PATH)/libs/sst/sst-plugininfra/libsst-plugininfra.a
+SURGE_FILESYSTEM_PATH = $(SURGE_DEP_PATH)/libs/sst/sst-plugininfra/libs/filesystem
+ifeq ($(WASM),true)
+# Emscripten may provide std::filesystem, in which case Surge creates only headers.
+SURGE_PLATFORM_FILESYSTEM := $(shell grep -sc '^\#define SST_PLUGINFRA_PLATFORM_FS 1$$' "$(SURGE_FILESYSTEM_PATH)/include/filesystem/import.h")
+endif
 ifneq ($(MACOS)$(WINDOWS),true)
-RACK_EXTRA_LIBS += $(SURGE_DEP_PATH)/libs/sst/sst-plugininfra/libs/filesystem/libfilesystem.a
+ifneq ($(SURGE_PLATFORM_FILESYSTEM),1)
+RACK_EXTRA_LIBS += $(SURGE_FILESYSTEM_PATH)/libfilesystem.a
+endif
 endif
 RACK_EXTRA_LIBS += $(SURGE_DEP_PATH)/libs/sst/sst-plugininfra/libs/strnatcmp/libstrnatcmp.a
 RACK_EXTRA_LIBS += $(SURGE_DEP_PATH)/libs/sst/sst-plugininfra/libs/tinyxml/libtinyxml.a
@@ -226,6 +236,9 @@ endif
 
 ifeq ($(WASM),true)
 WASM_RESOURCES  = $(TARGET_DIR)/$(NAME).html $(LV2_RESOURCES)
+ifeq ($(CARDINAL_VARIANT),native)
+WASM_RESOURCES += $(TARGET_DIR)/CardinalWebMCP.mjs
+endif
 
 EXTRA_DSP_DEPENDENCIES += $(WASM_RESOURCES)
 endif
@@ -461,6 +474,10 @@ $(TARGET_DIR)/%.app/Contents/Resources/distrho.icns: ../../utils/distrho.icns
 
 ifeq ($(WASM),true)
 $(TARGET_DIR)/$(NAME).html: ../emscripten/$(NAME).html
+	-@mkdir -p $(shell dirname $@)
+	cp $< $@
+
+$(TARGET_DIR)/CardinalWebMCP.mjs: ../emscripten/CardinalWebMCP.mjs
 	-@mkdir -p $(shell dirname $@)
 	cp $< $@
 endif

@@ -4,6 +4,7 @@ on: [push, pull_request]
 
 jobs:
   notification:
+    if: github.repository == 'DISTRHO/Cardinal'
     runs-on: ubuntu-latest
     name: IRC notification
     steps:

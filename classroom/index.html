@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Cardinal WebMCP</title>
+  <style>
+    :root { color-scheme: dark; font-family: system-ui, sans-serif; background: #18191b; color: #f5f2eb; }
+    body { margin: 0; }
+    main { max-width: 42rem; padding: clamp(2rem, 8vw, 6rem) 1.5rem 2rem; margin: auto; }
+    h1 { font-size: clamp(2.5rem, 7vw, 4rem); margin: 0; letter-spacing: -.055em; }
+    h2 { font-size: 1.2rem; margin-top: 2.5rem; }
+    p, li { line-height: 1.6; }
+    p, li, footer { color: #d1ccc2; }
+    li + li { margin-top: .45rem; }
+    a { color: #ffc083; text-underline-offset: .2em; }
+    .actions { display: flex; flex-wrap: wrap; gap: .65rem; margin: 1.5rem 0 1rem; }
+    .actions a { flex: 0 1 auto; border: 1px solid #6c6258; border-radius: .4rem; padding: .6rem .85rem; }
+    .actions a:first-child { background: #ffc083; border-color: #ffc083; color: #211711; font-weight: 650; text-decoration: none; }
+    footer { border-top: 1px solid #49443d; margin-top: 2.5rem; padding-top: 1rem; font-size: .9rem; }
+    code { overflow-wrap: anywhere; }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>Cardinal WebMCP</h1>
+    <p>Patch a modular synth in your browser. Start with an eight-step FM bass loop or open the rack and build your own.</p>
+    <nav class="actions" aria-label="Open a patch">
+      <a href="rack/fm-filter-sequence.html">Play the FM starter</a>
+      <a href="rack/">Open Cardinal</a>
+    </nav>
+    <p>Allow time for the first load, then click the rack once to start audio. The <strong>RUN</strong> button on SEQ3 pauses or resumes the starter loop.</p>
+    <h2>Patch with an agent</h2>
+    <ol>
+      <li>In Chrome, open <code>chrome://flags/#enable-webmcp-testing</code>, enable <strong>WebMCP for testing</strong>, and relaunch.</li>
+      <li>Open the rack in Chrome with a WebMCP-capable agent or the <a href="https://chromewebstore.google.com/detail/webmcp-model-context-tool/gbpdfapgefenggkahomfgkhfehlcenpd">Model Context Tool Inspector</a>.</li>
+      <li>Run <code>cardinal_patch</code> with <code>{}</code> to check the connection, or ask your agent to inspect the rack and turn up the FM on the second oscillator.</li>
+    </ol>
+    <p>You can patch by hand in Cardinal. To keep your work, use <strong>File → Save and download uncompressed</strong> and keep the <code>.vcv</code> file.</p>
+    <footer><a href="rack/fm-filter-sequence.vcv" download>Download the starter patch</a> · <a href="https://github.com/languel/cardinal-webmcp">Source and build notes</a> · <a href="LICENSE.txt">License</a></footer>
+  </main>
+</body>
+</html>

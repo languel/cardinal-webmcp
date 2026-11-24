@@ -138,6 +138,11 @@
             spinnerElement.style.display = 'none';
             canvasWrapper.style.display = 'block';
             window.dispatchEvent(new Event('resize'));
+            if (document.modelContext?.registerTool && Module._cardinalWebMCP) {
+              import('./CardinalWebMCP.mjs')
+                .then(({ registerCardinalTools }) => registerCardinalTools(document.modelContext, Module))
+                .catch(error => console.error('Cardinal WebMCP registration failed', error));
+            }
           },
           locateFile: function(p,_) {
             return simdSupported ? p : p.replace("CardinalNative",  "CardinalNative-nosimd");

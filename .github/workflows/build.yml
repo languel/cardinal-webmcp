@@ -1,6 +1,7 @@
 name: build
 
-on: [push, pull_request]
+on:
+  workflow_dispatch:
 
 env:
   CACHE_VERSION: 15
@@ -384,7 +385,7 @@ jobs:
       - name: Pack binaries
         if: steps.cache.outputs.cache-hit == 'true'
         run: |
-          cd bin; zip -r -9 ../${{ github.event.repository.name }}-wasm-${{ matrix.target }}-${{ github.event.pull_request.number || env.SHA8 }}.zip $(ls *.br *.html *.data *.js *.wasm) CardinalMini.lv2/modgui
+          cd bin; zip -r -9 ../${{ github.event.repository.name }}-wasm-${{ matrix.target }}-${{ github.event.pull_request.number || env.SHA8 }}.zip $(ls *.br *.html *.data *.js *.mjs *.wasm) CardinalMini.lv2/modgui
       - uses: actions/upload-artifact@v4
         with:
           name: ${{ github.event.repository.name }}-wasm-${{ matrix.target }}-${{ github.event.pull_request.number || env.SHA8 }}
