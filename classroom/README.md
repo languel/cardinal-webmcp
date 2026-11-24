@@ -11,6 +11,8 @@ and the WebMCP registration module. Pages assembles the HTML from source. The re
 source revision used for the deployment. The local release used the pinned
 submodules, PawPaw's Emscripten 3.1.27 SDK, and the Surge WASM compatibility
 adjustments described in the build notes and upstream WASM workflow.
+Use an optimized WASM link and ensure the generated libarchive configuration
+defines both `HAVE_LIBZSTD` and `HAVE_ZSTD_H` so compressed patches can open.
 
 The original Cardinal source and dependency references are included in this repository.
 See the [license](../LICENSE) and the [upstream project](https://github.com/DISTRHO/Cardinal).

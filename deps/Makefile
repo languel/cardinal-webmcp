@@ -184,6 +184,8 @@ $(RACK_DEP_PATH)/jansson-2.12:
 	$(DEP_MAKE2) -C $(RACK_DEP_PATH) jansson-2.12
 
 # libarchive: skip shared lib and ensure libzstd is enabled
+$(RACK_DEP_PATH)/lib/libarchive.a $(RACK_DEP_PATH)/lib/libarchive_static.a: private CMAKE += -DZSTD_LIBRARY:FILEPATH=$(RACK_DEP_PATH)/lib/libzstd.a
+
 $(RACK_DEP_PATH)/lib/libarchive.a: $(RACK_DEP_PATH)/lib/libzstd.a $(RACK_DEP_PATH)/libarchive-3.4.3/.stamp-patched
 
 $(RACK_DEP_PATH)/lib/libarchive_static.a: $(RACK_DEP_PATH)/lib/libzstd.a $(RACK_DEP_PATH)/libarchive-3.4.3/.stamp-patched
