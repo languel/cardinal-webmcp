@@ -849,11 +849,11 @@ struct HelpButton : MenuButton {
 
 #ifdef DISTRHO_OS_WASM
 		menu->addChild(createMenuItem("Classroom guide", "", []() {
-			patchUtils::openBrowser("https://languel.github.io/cardinal-webmcp/classroom-guide.html");
+			patchUtils::openBrowser("./classroom-guide.html");
 		}));
 
 		menu->addChild(createMenuItem("Médiathèque", "", []() {
-			patchUtils::openBrowser("https://github.com/languel/mediatheque");
+			patchUtils::openBrowser("https://languel.github.io/mediatheque/");
 		}));
 #endif
 

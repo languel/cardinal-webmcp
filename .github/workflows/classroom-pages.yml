@@ -23,7 +23,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release download classroom-v2 --repo "$GITHUB_REPOSITORY" --pattern cardinal-wasm.tar.gz
+          gh release download classroom-v3 --repo "$GITHUB_REPOSITORY" --pattern cardinal-wasm.tar.gz
           sha256sum --check classroom/cardinal-wasm.sha256
       - name: Assemble the classroom site
         run: |

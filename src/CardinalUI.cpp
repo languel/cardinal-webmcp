@@ -483,7 +483,7 @@ public:
             static_cast<CardinalBasePlugin*>(context->plugin)->setState("patch", rack::patchFromURL);
             rack::contextSet(context);
         }
-        else
+        else if (!EM_ASM_INT({ return typeof window.cardinalClassroomLoadPatch === 'function'; }))
         {
             new WasmWelcomeDialog();
         }
