@@ -1,17 +1,7 @@
 <!doctype html>
 <meta charset="utf-8">
 <title>FM Filter Sequence</title>
-<p id="status">Opening the FM Filter Sequence in Cardinal…</p>
-<a href="fm-filter-sequence.vcv" download>Download the Cardinal patch</a>
-<script type="module">
-try {
-  const response = await fetch("fm-filter-sequence.vcv");
-  if (!response.ok) throw new Error("Could not load the patch");
-  const patch = JSON.stringify(await response.json());
-  const url = new URL("./", location.href);
-  url.searchParams.set("patch", btoa(patch));
-  location.replace(url);
-} catch (error) {
-  document.getElementById("status").textContent = error.message;
-}
+<a id="open" href="../?patchurl=rack%2Ffm-filter-sequence.vcv">Open the FM Filter Sequence in Cardinal</a>
+<script>
+  location.replace(document.getElementById("open").href);
 </script>

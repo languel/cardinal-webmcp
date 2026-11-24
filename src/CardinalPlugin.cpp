@@ -85,7 +85,8 @@ void UI::setState(const char*, const char*) {}
 static char* getPatchFileEncodedInURL() {
     return static_cast<char*>(EM_ASM_PTR({
         var searchParams = new URLSearchParams(window.location.search);
-        var patch = searchParams.get('patch');
+        var patch = window.cardinalClassroomPatch || searchParams.get('patch');
+        delete window.cardinalClassroomPatch;
         if (!patch)
         return null;
         var length = lengthBytesUTF8(patch) + 1;
@@ -98,6 +99,8 @@ static char* getPatchFileEncodedInURL() {
 static char* getPatchRemoteURL() {
     return static_cast<char*>(EM_ASM_PTR({
         var searchParams = new URLSearchParams(window.location.search);
+        if (window.cardinalClassroomPatch)
+        return null;
         var patch = searchParams.get('patchurl');
         if (!patch)
         return null;
@@ -111,6 +114,8 @@ static char* getPatchRemoteURL() {
 static char* getPatchStorageSlug() {
     return static_cast<char*>(EM_ASM_PTR({
         var searchParams = new URLSearchParams(window.location.search);
+        if (window.cardinalClassroomPatch)
+        return null;
         var patch = searchParams.get('patchstorage');
         if (!patch)
         return null;

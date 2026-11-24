@@ -1,0 +1,9 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Cardinal WebMCP</title>
+<a href="../">Open Cardinal</a>
+<script>
+  const rack = new URL("../", location.href);
+  rack.search = location.search;
+  location.replace(rack);
+</script>

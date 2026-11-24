@@ -205,7 +205,28 @@
         jsModuleScript.setAttribute('async', true);
         jsModuleScript.setAttribute('src', jsModuleName);
         jsModuleScript.setAttribute('type','text/javascript');
-        document.head.appendChild(jsModuleScript);
+        if (window.cardinalClassroomLoadPatch) {
+          const params = new URLSearchParams(location.search);
+          if (params.get('patchurl') || params.get('patchstorage')) {
+            Module.setStatus('Loading patch...');
+          }
+          window.cardinalClassroomLoadPatch()
+            .then(() => document.head.appendChild(jsModuleScript))
+            .catch(error => {
+              statusElement.style.display = 'none';
+              progressElement.style.display = 'none';
+              spinnerElement.style.display = 'none';
+              errorElement.style.display = 'block';
+              errorElement.textContent = 'Could not open patch. ' +
+                (error instanceof TypeError ? 'Check the file URL and whether its server allows browser requests.' : error.message);
+              const openRack = document.createElement('a');
+              openRack.href = location.pathname;
+              openRack.textContent = 'Open Cardinal';
+              errorElement.append(document.createElement('br'), openRack);
+            });
+        } else {
+          document.head.appendChild(jsModuleScript);
+        }
       }
     </script>
   </body>

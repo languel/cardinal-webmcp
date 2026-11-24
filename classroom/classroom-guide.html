@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Cardinal WebMCP</title>
+  <title>Cardinal Classroom Guide</title>
   <style>
     :root { color-scheme: dark; font-family: system-ui, sans-serif; background: #18191b; color: #f5f2eb; }
     body { margin: 0; }
@@ -23,13 +23,23 @@
 </head>
 <body>
   <main>
-    <h1>Cardinal WebMCP</h1>
+    <h1>Classroom guide</h1>
     <p>Patch a modular synth in your browser. Start with an eight-step FM bass loop or open the rack and build your own.</p>
     <nav class="actions" aria-label="Open a patch">
       <a href="rack/fm-filter-sequence.html">Play the FM starter</a>
-      <a href="rack/">Open Cardinal</a>
+      <a href="./">Open Cardinal</a>
     </nav>
     <p>Allow time for the first load, then click the rack once to start audio. The <strong>RUN</strong> button on SEQ3 pauses or resumes the starter loop.</p>
+    <h2>Open and share patches</h2>
+    <p>Use <code>?patchurl=</code> with a public .vcv URL from GitHub or Médiathèque,
+      or <code>?patchstorage=</code> with the slug from a Cardinal patch page on PatchStorage.</p>
+    <ul>
+      <li><a href="./?patchurl=rack%2Ffm-filter-sequence.vcv">FM Filter Sequence from this site</a></li>
+      <li><a href="./?patchstorage=wasm-house-loop">WASM House Loop from PatchStorage</a></li>
+      <li><a href="https://languel.github.io/mediatheque/">Browse Médiathèque class materials</a></li>
+    </ul>
+    <p>Encode the patch URL when it contains query parameters or special characters.
+      A file on a different website must allow cross-origin requests.</p>
     <h2>Patch with an agent</h2>
     <ol>
       <li>In Chrome, open <code>chrome://flags/#enable-webmcp-testing</code>, enable <strong>WebMCP for testing</strong>, and relaunch.</li>
