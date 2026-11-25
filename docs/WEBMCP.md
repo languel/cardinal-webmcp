@@ -8,7 +8,9 @@ Undo history and can be saved from Cardinal's File menu.
 
 Build the web version as described in [BUILDING.md](BUILDING.md), then serve the
 build files from one local origin. The tool module `CardinalWebMCP.mjs` must be
-alongside `CardinalNative.html` and its JavaScript, WASM, and data files.
+alongside `CardinalNative.html` and its JavaScript, WASM, and data files. Serve
+`CardinalBindings.mjs` and `CardinalCode.mjs` from the same directory for the
+bindings catalog and the Code module runner.
 
 ```sh
 python3 -m http.server 8786 --bind 127.0.0.1 --directory bin

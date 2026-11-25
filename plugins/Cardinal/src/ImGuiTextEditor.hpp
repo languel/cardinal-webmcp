@@ -42,6 +42,7 @@ struct ImGuiTextEditor : ImGuiWidget
     void setFileWithKnownText(const std::string& file, const std::string& text);
     std::string getFile() const;
 
+    void setShowStatus(bool show);
     void setLanguageDefinition(const std::string& lang);
 
    /**
@@ -62,6 +63,7 @@ struct ImGuiTextEditor : ImGuiWidget
     void copy();
     void cut();
     void paste();
+    void paste(const char* text);
 
     bool canUndo() const;
     bool canRedo() const;

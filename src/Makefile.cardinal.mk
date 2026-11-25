@@ -237,7 +237,7 @@ endif
 ifeq ($(WASM),true)
 WASM_RESOURCES  = $(TARGET_DIR)/$(NAME).html $(LV2_RESOURCES)
 ifeq ($(CARDINAL_VARIANT),native)
-WASM_RESOURCES += $(TARGET_DIR)/CardinalWebMCP.mjs
+WASM_RESOURCES += $(TARGET_DIR)/CardinalWebMCP.mjs $(TARGET_DIR)/CardinalBindings.mjs $(TARGET_DIR)/CardinalCode.mjs
 endif
 
 EXTRA_DSP_DEPENDENCIES += $(WASM_RESOURCES)
@@ -477,7 +477,7 @@ $(TARGET_DIR)/$(NAME).html: ../emscripten/$(NAME).html
 	-@mkdir -p $(shell dirname $@)
 	cp $< $@
 
-$(TARGET_DIR)/CardinalWebMCP.mjs: ../emscripten/CardinalWebMCP.mjs
+$(TARGET_DIR)/%.mjs: ../emscripten/%.mjs
 	-@mkdir -p $(shell dirname $@)
 	cp $< $@
 endif

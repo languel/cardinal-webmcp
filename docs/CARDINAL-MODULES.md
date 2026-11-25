@@ -249,6 +249,35 @@ It is purely cosmetic.
 This module was done early in Cardinal's development as a way to test drawing a module using OpenGL.  
 It remains as a test case and example for others to base new modules on.
 
+### Code
+
+Code runs a JavaScript function in Cardinal Web. Patch the two CV inputs and
+outputs to other modules, edit the JavaScript on the rack panel, then click
+**Run**. Each Code module has its own editor and can run independently.
+
+```js
+function process({ input, time }) {
+  return [input[0] * 0.5 + input[1], 5 * Math.sin(2 * Math.PI * time)];
+}
+```
+
+`input` contains two voltages, and `time` is seconds since Run. Return two
+voltages in output jack order. The inputs and outputs are monophonic. The
+browser evaluates the function up to 30 times a second and holds the last
+output between calls. Outputs are limited to ±10 V. Use this for modulation
+and control signals. Use rack modules for audio-rate processing or precise
+clock and trigger timing.
+
+Run stores the source with the module after the first successful evaluation.
+**Collapse** makes the panel compact while the code continues running. **Show
+editor** expands it when there is room to its right. **Stop** sets the outputs
+to 0 V. Reopened patches start stopped and need a click on Run.
+
+[Try the CV demo patch](../patches/code-cv-demo.vcv) with 8vert, two Code
+modules, and Scope. Run both editors. The first halves the 6 V from 8vert, and
+the second adds 1 V. Scope shows 4 V on channel 1 and the first module’s sine
+LFO on channel 2.
+
 ### Text Editor
 
 ![screenshot](Module_TextEditor.png)

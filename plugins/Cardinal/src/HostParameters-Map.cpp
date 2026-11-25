@@ -31,6 +31,10 @@
 #include "Widgets.hpp"
 #include "engine/TerminalModule.hpp"
 
+#ifndef HEADLESS
+#include <AbsoluteSlider.hpp>
+#endif
+
 // -----------------------------------------------------------------------------------------------------------
 
 static constexpr const uint8_t MAX_MAPPED_PARAMS = 64;
@@ -353,11 +357,9 @@ struct HostParametersMap : TerminalModule {
 struct ParameterIndexQuantity : Quantity {
     HostParameterMapping& mapping;
     uint32_t numHostParameters = 0;
-    float v;
 
     ParameterIndexQuantity(HostParameterMapping& m)
-      : mapping(m),
-        v(mapping.hostParamId)
+      : mapping(m)
     {
         if (CardinalPluginContext* pcontext = static_cast<CardinalPluginContext*>(APP))
             numHostParameters = pcontext->parameterCount;
@@ -373,11 +375,11 @@ struct ParameterIndexQuantity : Quantity {
         return 0;
     }
     float getValue() override {
-        return v;
+        return mapping.hostParamId;
     }
     void setValue(float value) override {
-        v = math::clamp(value, getMinValue(), getMaxValue());
-        mapping.hostParamId = math::clamp(static_cast<int>(v + 0.5f), 0, numHostParameters - 1);
+        const float position = math::clamp(value, getMinValue(), getMaxValue());
+        mapping.hostParamId = static_cast<uint8_t>(position + 0.5f);
     }
     float getDisplayValue() override {
         return mapping.hostParamId + 1;
@@ -390,7 +392,7 @@ struct ParameterIndexQuantity : Quantity {
     }
 };
 
-struct ParameterIndexSlider : ui::Slider {
+struct ParameterIndexSlider : ui::AbsoluteSlider {
     ParameterIndexSlider(HostParameterMapping& m) {
         quantity = new ParameterIndexQuantity(m);
     }

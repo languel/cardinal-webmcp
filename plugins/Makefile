@@ -225,6 +225,9 @@ MINIPLUGIN_FILES = plugins-mini.cpp
 
 PLUGIN_FILES += Cardinal/src/AIDA-X.cpp
 PLUGIN_FILES += Cardinal/src/Blank.cpp
+ifeq ($(WASM),true)
+PLUGIN_FILES += Cardinal/src/Code.cpp
+endif
 PLUGIN_FILES += Cardinal/src/ExpanderInputMIDI.cpp
 PLUGIN_FILES += Cardinal/src/ExpanderOutputMIDI.cpp
 PLUGIN_FILES += Cardinal/src/HostAudio.cpp

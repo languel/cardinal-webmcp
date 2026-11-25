@@ -35,7 +35,7 @@
 #include <ui/MenuItem.hpp>
 #include <ui/MenuSeparator.hpp>
 #include <ui/SequentialLayout.hpp>
-#include <ui/Slider.hpp>
+#include <AbsoluteSlider.hpp>
 #include <ui/TextField.hpp>
 #include <ui/ProgressBar.hpp>
 #include <ui/Label.hpp>
@@ -342,6 +342,15 @@ struct EditButton : MenuButton {
 		menu->cornerFlags = BND_CORNER_TOP;
 		menu->box.pos = getAbsoluteOffset(math::Vec(0, box.size.y));
 
+#ifdef DISTRHO_OS_WASM
+		if (EM_ASM_INT({ return typeof window.cardinalShowBindings === 'function'; })) {
+			menu->addChild(createMenuItem("Bindings…", "", []() {
+				EM_ASM({ window.cardinalShowBindings(); });
+			}));
+			menu->addChild(new ui::MenuSeparator);
+		}
+#endif
+
 		struct UndoItem : ui::MenuItem {
 			void step() override {
 				text = "Undo " + APP->history->getUndoName();
@@ -411,7 +420,7 @@ struct ZoomQuantity : Quantity {
 		return "%";
 	}
 };
-struct ZoomSlider : ui::Slider {
+struct ZoomSlider : ui::AbsoluteSlider {
 	ZoomSlider() {
 		quantity = new ZoomQuantity;
 	}
@@ -444,7 +453,7 @@ struct CableOpacityQuantity : Quantity {
 		return "%";
 	}
 };
-struct CableOpacitySlider : ui::Slider {
+struct CableOpacitySlider : ui::AbsoluteSlider {
 	CableOpacitySlider() {
 		quantity = new CableOpacityQuantity;
 	}
@@ -477,7 +486,7 @@ struct CableTensionQuantity : Quantity {
 		return "%";
 	}
 };
-struct CableTensionSlider : ui::Slider {
+struct CableTensionSlider : ui::AbsoluteSlider {
 	CableTensionSlider() {
 		quantity = new CableTensionQuantity;
 	}
@@ -513,7 +522,7 @@ struct RackBrightnessQuantity : Quantity {
 		return 3;
 	}
 };
-struct RackBrightnessSlider : ui::Slider {
+struct RackBrightnessSlider : ui::AbsoluteSlider {
 	RackBrightnessSlider() {
 		quantity = new RackBrightnessQuantity;
 	}
@@ -549,7 +558,7 @@ struct HaloBrightnessQuantity : Quantity {
 		return 3;
 	}
 };
-struct HaloBrightnessSlider : ui::Slider {
+struct HaloBrightnessSlider : ui::AbsoluteSlider {
 	HaloBrightnessSlider() {
 		quantity = new HaloBrightnessQuantity;
 	}
@@ -589,7 +598,7 @@ struct KnobScrollSensitivityQuantity : Quantity {
 		return 2;
 	}
 };
-struct KnobScrollSensitivitySlider : ui::Slider {
+struct KnobScrollSensitivitySlider : ui::AbsoluteSlider {
 	KnobScrollSensitivitySlider() {
 		quantity = new KnobScrollSensitivityQuantity;
 	}

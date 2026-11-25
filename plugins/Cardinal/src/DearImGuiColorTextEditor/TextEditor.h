@@ -265,6 +265,7 @@ public:
 	void Copy();
 	void Cut();
 	void Paste();
+	void Paste(const char* text);
 	void Delete();
 
 	bool CanUndo() const;

@@ -1172,6 +1172,11 @@ static void initStatic__Cardinal()
         p->addModel(modelHostParametersMap);
         p->addModel(modelHostTime);
         p->addModel(modelTextEditor);
+       #if defined(__EMSCRIPTEN__) && !defined(HEADLESS)
+        p->addModel(modelCardinalCode);
+       #else
+        spl.removeModule("Code");
+       #endif
        #ifndef DGL_USE_GLES
         p->addModel(modelGlBars);
        #else

@@ -1957,10 +1957,14 @@ void TextEditor::Cut()
 
 void TextEditor::Paste()
 {
+	Paste(ImGui::GetClipboardText());
+}
+
+void TextEditor::Paste(const char* clipText)
+{
 	if (IsReadOnly())
 		return;
 
-	auto clipText = ImGui::GetClipboardText();
 	if (clipText != nullptr && strlen(clipText) > 0)
 	{
 		UndoRecord u;

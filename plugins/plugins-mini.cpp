@@ -217,6 +217,7 @@ static void initStatic__Cardinal()
         spl.removeModule("AudioFile");
         spl.removeModule("Blank");
         spl.removeModule("Carla");
+        spl.removeModule("Code");
         spl.removeModule("ExpanderInputMIDI");
         spl.removeModule("ExpanderOutputMIDI");
         spl.removeModule("HostAudio8");

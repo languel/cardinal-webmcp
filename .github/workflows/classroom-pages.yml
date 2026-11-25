@@ -30,6 +30,7 @@ jobs:
           mkdir -p _site/rack
           tar -xzf cardinal-wasm.tar.gz -C _site
           awk -v build="$GITHUB_SHA" '/<script type=/{print "    <script src=\"./patch-links.js?v=" build "\" data-cardinal-build=\"" build "\"></script>"} {print}' src/emscripten/CardinalNative.html > _site/index.html
+          cp src/emscripten/CardinalBindings.mjs src/emscripten/CardinalCode.mjs _site/
           cp classroom/patch-links.js classroom/classroom-guide.html _site/
           cp classroom/rack-redirect.html _site/rack/index.html
           cp LICENSE _site/LICENSE.txt

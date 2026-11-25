@@ -1,0 +1,108 @@
+{
+  "version": "2.4.1",
+  "zoom": 0.84,
+  "gridOffset": [
+    -1,
+    -0.1
+  ],
+  "modules": [
+    {
+      "id": 1,
+      "plugin": "Fundamental",
+      "model": "8vert",
+      "pos": [
+        0,
+        0
+      ],
+      "params": [
+        {
+          "id": 0,
+          "value": 0.6
+        }
+      ],
+      "version": "2.0"
+    },
+    {
+      "id": 2,
+      "plugin": "Cardinal",
+      "model": "Code",
+      "pos": [
+        8,
+        0
+      ],
+      "data": {
+        "source": "function process({ input, time }) {\n  const half = input[0] * 0.5;\n  const phase = 2 * Math.PI * time;\n  return [half, 5 * Math.sin(phase)];\n}\n",
+        "expanded": true
+      },
+      "version": "2.0"
+    },
+    {
+      "id": 4,
+      "plugin": "Cardinal",
+      "model": "Code",
+      "version": "2.0",
+      "pos": [
+        40,
+        0
+      ],
+      "data": {
+        "source": "function process({ input }) {\n  return [input[0] + 1, 0];\n}\n",
+        "expanded": true
+      }
+    },
+    {
+      "id": 3,
+      "plugin": "Fundamental",
+      "model": "Scope",
+      "pos": [
+        72,
+        0
+      ],
+      "params": [
+        {
+          "id": 4,
+          "value": 1
+        },
+        {
+          "id": 7,
+          "value": 1
+        }
+      ],
+      "version": "2.0"
+    }
+  ],
+  "cables": [
+    {
+      "id": 1,
+      "outputModuleId": 1,
+      "outputId": 0,
+      "inputModuleId": 2,
+      "inputId": 0,
+      "color": "#90cc78"
+    },
+    {
+      "id": 2,
+      "outputModuleId": 2,
+      "outputId": 0,
+      "inputModuleId": 4,
+      "inputId": 0,
+      "color": "#e2ba5f"
+    },
+    {
+      "id": 3,
+      "outputModuleId": 2,
+      "outputId": 1,
+      "inputModuleId": 3,
+      "inputId": 1,
+      "color": "#74b5f4"
+    },
+    {
+      "id": 4,
+      "outputModuleId": 4,
+      "outputId": 0,
+      "inputModuleId": 3,
+      "inputId": 0,
+      "color": "#e2ba5f"
+    }
+  ]
+}

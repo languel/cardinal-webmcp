@@ -203,6 +203,14 @@
       ]
     },
     {
+      "slug": "Code",
+      "name": "Code",
+      "description": "JavaScript processing for two CV inputs and outputs",
+      "tags": [
+        "Utility"
+      ]
+    },
+    {
       "slug": "TextEditor",
       "name": "Text Editor",
       "description": "An embed text editor inside Cardinal",

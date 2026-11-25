@@ -5,6 +5,8 @@
 #include <engine/Engine.hpp>
 #include <history.hpp>
 #include <plugin.hpp>
+#include "DistrhoUtils.hpp"
+#include "plugincontext.hpp"
 
 #include <emscripten/emscripten.h>
 
@@ -280,6 +282,20 @@ json_t* setParameter(json_t* input)
 
 json_t* execute(const std::string& operation, json_t* input)
 {
+    if (operation == "host_parameters" || operation == "host_parameter")
+    {
+        auto* context = static_cast<CardinalPluginContext*>(APP);
+        if (operation == "host_parameters")
+            return json_pack("{s:i}", "count", static_cast<int>(context->parameterCount));
+
+        const int slot = index(input, "slot", 1, context->parameterCount) - 1;
+        const auto* number = json_object_get(input, "value");
+        const double value = json_number_value(number);
+        if (!json_is_number(number) || !std::isfinite(value) || value < 0.0 || value > 10.0)
+            throw std::runtime_error("Expected a host parameter value between 0 and 10");
+        context->parameters[slot] = static_cast<float>(value);
+        return json_pack("{s:f}", "value", value);
+    }
     if (operation == "patch") return patchSummary();
     if (operation == "search") return searchModules(input);
     if (operation == "inspect") return inspectModule(findModule(input, "module"));

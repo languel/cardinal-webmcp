@@ -17,6 +17,21 @@ defines both `HAVE_LIBZSTD` and `HAVE_ZSTD_H` so compressed patches can open.
 The original Cardinal source and dependency references are included in this repository.
 See the [license](../LICENSE) and the [upstream project](https://github.com/DISTRHO/Cardinal).
 
+## Code and performance controls
+
+Build CardinalNative from this source to use the [Code module](../docs/CARDINAL-MODULES.md#code)
+and the [two-module CV demo](../patches/code-cv-demo.vcv). Open the demo in the rack and
+click **Run** on each panel. Each panel has its own JavaScript editor and two CV inputs
+and outputs. Patch files store source and panel layout. Reopened patches start stopped.
+
+Open **Edit → Bindings** to learn a keyboard key or MIDI note or CC and assign it to
+a Host Parameter slot. Use **Host Params Map** to connect that slot to a module
+control, such as a sequencer's Run button. Bindings are stored in this browser.
+The View sliders and the Host Params Map slot selector follow the pointer position.
+
+The public site uses the WebAssembly archive pinned by the Pages workflow. A
+source push alone does not replace that archive or publish the site.
+
 ## Open a patch from a URL
 
 Add a query parameter to the classroom site URL.

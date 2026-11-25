@@ -33,6 +33,7 @@ struct ImGuiTextEditor::PrivateData {
     TextEditor editor;
     std::string file;
     bool darkMode = true;
+    bool showStatus = true;
 };
 
 // --------------------------------------------------------------------------------------------------------------------
@@ -77,6 +78,11 @@ std::string ImGuiTextEditor::getFile() const
     return pData->file;
 }
 
+void ImGuiTextEditor::setShowStatus(bool show)
+{
+    pData->showStatus = show;
+}
+
 void ImGuiTextEditor::setLanguageDefinition(const std::string& lang)
 {
     pData->editor.SetColorizerEnable(true);
@@ -91,6 +97,25 @@ void ImGuiTextEditor::setLanguageDefinition(const std::string& lang)
         return pData->editor.SetLanguageDefinition(TextEditor::LanguageDefinition::GLSL());
     if (lang == "HLSL")
         return pData->editor.SetLanguageDefinition(TextEditor::LanguageDefinition::HLSL());
+    if (lang == "JavaScript")
+    {
+        static const auto javascript = [] {
+            auto language = TextEditor::LanguageDefinition::CPlusPlus();
+            language.mName = "JavaScript";
+            language.mKeywords = {
+                "async", "await", "break", "case", "catch", "class", "const", "continue",
+                "debugger", "default", "delete", "do", "else", "export", "extends", "false",
+                "finally", "for", "function", "if", "import", "in", "instanceof", "let", "new",
+                "null", "of", "return", "static", "super", "switch", "this", "throw", "true",
+                "try", "typeof", "undefined", "var", "void", "while", "with", "yield"
+            };
+            language.mIdentifiers.clear();
+            language.mPreprocIdentifiers.clear();
+            language.mPreprocChar = '\0';
+            return language;
+        }();
+        return pData->editor.SetLanguageDefinition(javascript);
+    }
     if (lang == "Lua")
         return pData->editor.SetLanguageDefinition(TextEditor::LanguageDefinition::Lua());
     if (lang == "SQL")
@@ -159,6 +184,11 @@ void ImGuiTextEditor::paste()
     pData->editor.Paste();
 }
 
+void ImGuiTextEditor::paste(const char* text)
+{
+    pData->editor.Paste(text);
+}
+
 bool ImGuiTextEditor::canUndo() const
 {
     return pData->editor.CanUndo();
@@ -198,14 +228,17 @@ void ImGuiTextEditor::drawImGui()
     {
         TextEditor& editor(pData->editor);
 
-        const TextEditor::Coordinates cpos = editor.GetCursorPosition();
+        if (pData->showStatus)
+        {
+            const TextEditor::Coordinates cpos = editor.GetCursorPosition();
 
-        ImGui::Text("%6d/%-6d %6d lines | %s | %s | %s",
-                    cpos.mLine + 1, cpos.mColumn + 1,
-                    editor.GetTotalLines(),
-                    editor.IsOverwrite() ? "Ovr" : "Ins",
-                    editor.GetLanguageDefinition().mName.c_str(),
-                    pData->file.c_str());
+            ImGui::Text("%6d/%-6d %6d lines | %s | %s | %s",
+                        cpos.mLine + 1, cpos.mColumn + 1,
+                        editor.GetTotalLines(),
+                        editor.IsOverwrite() ? "Ovr" : "Ins",
+                        editor.GetLanguageDefinition().mName.c_str(),
+                        pData->file.c_str());
+        }
 
         editor.Render("TextEditor");
     }
@@ -216,7 +249,7 @@ void ImGuiTextEditor::drawImGui()
 void ImGuiTextEditor::onButton(const ButtonEvent& e)
 {
     // if mouse press is over the top status bar, do nothing so editor can be moved in the Rack
-    if (e.action == GLFW_PRESS && e.pos.y < 25)
+    if (pData->showStatus && e.action == GLFW_PRESS && e.pos.y < 25)
         return;
 
     ImGuiWidget::onButton(e);
@@ -225,7 +258,7 @@ void ImGuiTextEditor::onButton(const ButtonEvent& e)
 void ImGuiTextEditor::onHoverScroll(const HoverScrollEvent& e)
 {
     // use Rack view scrolling if there is no scrollbar
-    if (pData->editor.GetTotalLines() < 27)
+    if (pData->showStatus && pData->editor.GetTotalLines() < 27)
         return;
 
     // if there is a scrollbar, handle the event
