@@ -1,0 +1,62 @@
+{
+  "version": "2.4.1",
+  "zoom": 1.1,
+  "gridOffset": [
+    -1,
+    -0.1
+  ],
+  "modules": [
+    {
+      "id": 1,
+      "plugin": "Fundamental",
+      "model": "8vert",
+      "version": "2.0",
+      "pos": [
+        52,
+        0
+      ],
+      "params": [
+        {
+          "id": 0,
+          "value": 0.5
+        },
+        {
+          "id": 1,
+          "value": -0.25
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "plugin": "Cardinal",
+      "model": "Shader",
+      "version": "2.0",
+      "pos": [
+        0,
+        0
+      ],
+      "data": {
+        "previewOnly": false,
+        "source": "precision mediump float;\nuniform vec2 u_resolution;\nuniform vec2 u_cv;\nuniform float u_time;\n\nvoid main() {\n  vec2 p = (2.0 * gl_FragCoord.xy\n            - u_resolution) / u_resolution.y;\n  float radius = 0.4 + 0.055 * u_cv.x;\n  float phase = u_time + u_cv.y * 0.2;\n  float wave = 0.075 * cos(8.0 * atan(p.y, p.x) + phase * 2.0);\n  float ring = 1.0 - smoothstep(0.005, 0.055,\n    abs(length(p) - radius - wave));\n  vec3 color = 0.55 + 0.4 * cos(phase + vec3(0.0, 2.1, 4.2));\n  gl_FragColor = vec4(vec3(0.018, 0.024, 0.04) + ring * color, 1.0);\n}\n"
+      }
+    }
+  ],
+  "cables": [
+    {
+      "id": 1,
+      "outputModuleId": 1,
+      "outputId": 0,
+      "inputModuleId": 2,
+      "inputId": 0,
+      "color": "#90cc78"
+    },
+    {
+      "id": 2,
+      "outputModuleId": 1,
+      "outputId": 1,
+      "inputModuleId": 2,
+      "inputId": 1,
+      "color": "#74b5f4"
+    }
+  ]
+}

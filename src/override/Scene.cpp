@@ -26,6 +26,7 @@
 #include <settings.hpp>
 #include <patch.hpp>
 #include <asset.hpp>
+#include <RackFraming.hpp>
 
 #ifdef NDEBUG
 # undef DEBUG
@@ -257,6 +258,14 @@ void Scene::onDragHover(const DragHoverEvent& e) {
 
 
 void Scene::onHoverKey(const HoverKeyEvent& e) {
+	if (e.action == GLFW_PRESS && (e.mods & RACK_MOD_MASK) == 0) {
+		if (((e.key == GLFW_KEY_F || e.keyName == "f") && frameAllModules())
+		    || (e.key == GLFW_KEY_PERIOD && frameSelectedModules(true))) {
+			e.consume(this);
+			return;
+		}
+	}
+
 	// Key commands that override children
 	if (e.action == GLFW_PRESS || e.action == GLFW_REPEAT) {
 		// DEBUG("key '%d '%c' scancode %d '%c' keyName '%s'", e.key, e.key, e.scancode, e.scancode, e.keyName.c_str());

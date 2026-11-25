@@ -31,6 +31,7 @@ extern Model* modelAudioToCVPitch;
 extern Model* modelCarla;
 extern Model* modelCardinalBlank;
 extern Model* modelCardinalCode;
+extern Model* modelCardinalShader;
 extern Model* modelExpanderInputMIDI;
 extern Model* modelExpanderOutputMIDI;
 extern Model* modelGlBars;

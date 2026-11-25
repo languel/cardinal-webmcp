@@ -1174,8 +1174,10 @@ static void initStatic__Cardinal()
         p->addModel(modelTextEditor);
        #if defined(__EMSCRIPTEN__) && !defined(HEADLESS)
         p->addModel(modelCardinalCode);
+        p->addModel(modelCardinalShader);
        #else
         spl.removeModule("Code");
+        spl.removeModule("Shader");
        #endif
        #ifndef DGL_USE_GLES
         p->addModel(modelGlBars);

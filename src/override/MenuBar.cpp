@@ -36,6 +36,7 @@
 #include <ui/MenuSeparator.hpp>
 #include <ui/SequentialLayout.hpp>
 #include <AbsoluteSlider.hpp>
+#include <RackFraming.hpp>
 #include <ui/TextField.hpp>
 #include <ui/ProgressBar.hpp>
 #include <ui/Label.hpp>
@@ -628,6 +629,11 @@ struct ViewButton : MenuButton {
 		menu->cornerFlags = BND_CORNER_TOP;
 		menu->box.pos = getAbsoluteOffset(math::Vec(0, box.size.y));
 
+		menu->addChild(createMenuItem("Frame All", "F", [] { frameAllModules(); },
+		                              APP->scene->rack->getModuleContainer()->children.empty()));
+		menu->addChild(createMenuItem("Frame Selection", ".", [] { frameSelectedModules(false); },
+		                              !APP->scene->rack->hasSelection()));
+		menu->addChild(new ui::MenuSeparator);
 		menu->addChild(createMenuLabel("Appearance"));
 
 #if DISTRHO_PLUGIN_WANT_DIRECT_ACCESS

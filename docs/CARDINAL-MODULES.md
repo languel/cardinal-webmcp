@@ -278,6 +278,28 @@ modules, and Scope. Run both editors. The first halves the 6 V from 8vert, and
 the second adds 1 V. Scope shows 4 V on channel 1 and the first module’s sine
 LFO on channel 2.
 
+### GLSL Visualizer
+
+Edit a GLSL ES 1.00 fragment shader and click **Apply** to render it in the rack.
+Start with the [GLSL visualizer demo](../patches/glsl-visualizer-demo.vcv).
+The first 8vert knob changes the ring's radius, and the second changes its phase
+and color. These are the uniforms available to a shader:
+
+| Uniform | GLSL type | Value |
+| --- | --- | --- |
+| `u_resolution` | `vec2` | Preview width and height in pixels |
+| `u_time` | `float` | Seconds since the shader was applied |
+| `u_cv` | `vec2` | Voltage at CV 1 and CV 2 |
+
+**Apply** saves the last successfully compiled source with the patch. A compile
+error leaves the working shader playing. **Preview only** gives the image the
+width of the editor and preview area. **Stop** clears the preview.
+
+Press **F** over the rack for **Frame All**, or hover a module and press **.**
+to frame it. With the pointer over empty rack space, **.** frames the selected
+modules. These commands are also in **View**. Click outside the code editor
+before using the rack shortcuts.
+
 ### Text Editor
 
 ![screenshot](Module_TextEditor.png)
