@@ -211,6 +211,11 @@ void ImGuiTextEditor::redo()
 
 // --------------------------------------------------------------------------------------------------------------------
 
+TextEditor& ImGuiTextEditor::textEditor()
+{
+    return pData->editor;
+}
+
 void ImGuiTextEditor::drawImGui()
 {
     const float scaleFactor = getScaleFactor();
@@ -224,7 +229,11 @@ void ImGuiTextEditor::drawImGui()
                      | ImGuiWindowFlags_NoTitleBar
                      | ImGuiWindowFlags_AlwaysAutoResize;
 
-    if (ImGui::Begin("TextEdit", nullptr, pflags))
+    if (transparentBackground)
+        ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.f);
+
+    if (ImGui::Begin("TextEdit", nullptr, pflags |
+                     (transparentBackground ? ImGuiWindowFlags_NoBackground : 0)))
     {
         TextEditor& editor(pData->editor);
 
@@ -244,6 +253,8 @@ void ImGuiTextEditor::drawImGui()
     }
 
     ImGui::End();
+    if (transparentBackground)
+        ImGui::PopStyleVar();
 }
 
 void ImGuiTextEditor::onButton(const ButtonEvent& e)
@@ -253,6 +264,20 @@ void ImGuiTextEditor::onButton(const ButtonEvent& e)
         return;
 
     ImGuiWidget::onButton(e);
+}
+
+void ImGuiTextEditor::onSelectKey(const SelectKeyEvent& e)
+{
+    const int mods = e.mods & (GLFW_MOD_CONTROL | GLFW_MOD_SUPER | GLFW_MOD_SHIFT | GLFW_MOD_ALT);
+    if ((e.key == GLFW_KEY_SLASH || e.keyName == "/")
+        && (mods == GLFW_MOD_SUPER || mods == GLFW_MOD_CONTROL))
+    {
+        if (e.action == GLFW_PRESS)
+            pData->editor.ToggleLineComment();
+        e.consume(this);
+        return;
+    }
+    ImGuiWidget::onSelectKey(e);
 }
 
 void ImGuiTextEditor::onHoverScroll(const HoverScrollEvent& e)
@@ -270,8 +295,9 @@ void ImGuiTextEditor::step()
     if (pData->darkMode != settings::preferDarkPanels)
     {
         pData->darkMode = settings::preferDarkPanels;
-        pData->editor.SetPalette(settings::preferDarkPanels ? TextEditor::GetDarkPalette()
-                                                            : TextEditor::GetLightPalette());
+        if (!transparentBackground)
+            pData->editor.SetPalette(settings::preferDarkPanels ? TextEditor::GetDarkPalette()
+                                                                : TextEditor::GetLightPalette());
     }
 
     ImGuiWidget::step();

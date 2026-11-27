@@ -19,6 +19,7 @@
 #include "plugincontext.hpp"
 #include "ModuleWidgets.hpp"
 #include "engine/TerminalModule.hpp"
+#include "BrowserTransport.hpp"
 
 // --------------------------------------------------------------------------------------------------------------------
 
@@ -63,13 +64,13 @@ struct HostTime : TerminalModule {
         uint32_t seconds = 0;
     } timeInfo;
 
-    HostTime()
+    HostTime(int params = NUM_PARAMS, int inputs = NUM_INPUTS, int lightCount = kHostTimeCount)
         : pcontext(static_cast<CardinalPluginContext*>(APP))
     {
         if (pcontext == nullptr)
             throw rack::Exception("Plugin context is null.");
 
-        config(NUM_PARAMS, NUM_INPUTS, kHostTimeCount, kHostTimeCount);
+        config(params, inputs, kHostTimeCount, lightCount);
     }
 
     void processTerminalInput(const ProcessArgs& args) override
@@ -104,7 +105,7 @@ struct HostTime : TerminalModule {
             if (d_isZero(tick))
             {
                 pulseBeat.trigger();
-                if (timeInfo.beat == 1)
+                if (timeInfo.beat == 1 && (timeInfo.bar - 1) % barDivision == 0)
                     pulseBar.trigger();
             }
 
@@ -131,7 +132,7 @@ struct HostTime : TerminalModule {
                     timeInfo.beat = 1;
                     ++timeInfo.bar;
 
-                    if (timeInfo.bar % barDivision == 1)
+                    if ((timeInfo.bar - 1) % barDivision == 0)
                         pulseBar.trigger();
                 }
             }
@@ -158,7 +159,8 @@ struct HostTime : TerminalModule {
                               ? tick / pcontext->ticksPerBeat
                               : 0.0f;
         const float barPhase = playingWithBBT && pcontext->beatsPerBar > 0
-                              ? ((float)((timeInfo.bar - 1) % barDivision) + (timeInfo.beat - 1) + beatPhase)
+                              ? ((float)(((timeInfo.bar - 1) % barDivision) * pcontext->beatsPerBar)
+                                 + (timeInfo.beat - 1) + beatPhase)
                               / (pcontext->beatsPerBar * barDivision)
                               : 0.0f;
 
@@ -344,5 +346,9 @@ struct HostTimeWidget : ModuleWidget {
 // --------------------------------------------------------------------------------------------------------------------
 
 Model* modelHostTime = createModel<HostTime, HostTimeWidget>("HostTime");
+
+#if defined(__EMSCRIPTEN__) && !defined(HEADLESS)
+#include "BrowserTransportModule.hpp"
+#endif
 
 // --------------------------------------------------------------------------------------------------------------------

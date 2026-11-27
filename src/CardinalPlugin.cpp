@@ -5,6 +5,10 @@
  */
 
 #include <library.hpp>
+#include <BrowserTransport.hpp>
+#ifdef __EMSCRIPTEN__
+# include <emscripten.h>
+#endif
 #include <midi.hpp>
 #include <patch.hpp>
 #include <plugin.hpp>
@@ -179,6 +183,9 @@ class CardinalPlugin : public CardinalBasePlugin
    #endif
 
     std::string fAutosavePath;
+   #ifdef __EMSCRIPTEN__
+    bool fBrowserTransportWasEnabled = false;
+   #endif
     uint64_t fNextExpectedFrame;
 
     struct {
@@ -1183,7 +1190,26 @@ protected:
         const bool bypassed = context->bypassed;
 
         {
+           #ifdef __EMSCRIPTEN__
+            auto& transport = rack::browserTransport();
+            TimePosition browserPosition;
+            if (transport.enabled)
+                transport.writePosition(browserPosition);
+            const TimePosition& timePos = transport.enabled ? browserPosition : getTimePosition();
+            if (transport.enabled || fBrowserTransportWasEnabled)
+            {
+                EM_ASM({
+                    if (Module.cardinalCode)
+                        Module.cardinalCode.updateTransport(!!$0, !!$1, $2, $3, $4, $5, $6);
+                }, transport.enabled, transport.playing, transport.beat, transport.bpm,
+                   transport.launchGrid(), transport.revision, transport.beatsPerBar);
+                fBrowserTransportWasEnabled = transport.enabled;
+            }
+            if (transport.enabled)
+                transport.advance(frames, getSampleRate());
+           #else
             const TimePosition& timePos(getTimePosition());
+           #endif
 
             bool reset = timePos.playing && (timePos.frame == 0 || d_isDiffHigherThanLimit(fNextExpectedFrame, timePos.frame, (uint64_t)2));
 
@@ -1209,6 +1235,10 @@ protected:
                 context->tick = timePos.bbt.tick;
                 context->ticksPerBeat = timePos.bbt.ticksPerBeat;
                 context->ticksPerClock = timePos.bbt.ticksPerBeat / timePos.bbt.beatType;
+           #ifdef __EMSCRIPTEN__
+                if (transport.enabled)
+                    context->ticksPerClock = timePos.bbt.ticksPerBeat * timePos.bbt.beatType / 16.0;
+           #endif
                 context->ticksPerFrame = 1.0 / samplesPerTick;
                 context->tickClock = std::fmod(timePos.bbt.tick, context->ticksPerClock);
                #if CARDINAL_VARIANT_MINI && ! DISTRHO_PLUGIN_WANT_DIRECT_ACCESS

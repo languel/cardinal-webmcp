@@ -18,6 +18,7 @@
 #include <app/Browser.hpp>
 #include <app/TipWindow.hpp>
 #include <app/MenuBar.hpp>
+#include <ui/MenuOverlay.hpp>
 #include <context.hpp>
 #include <engine/Engine.hpp>
 #include <system.hpp>
@@ -27,6 +28,8 @@
 #include <patch.hpp>
 #include <asset.hpp>
 #include <RackFraming.hpp>
+#include <RackNavigation.hpp>
+#include <BrowserTransport.hpp>
 
 #ifdef NDEBUG
 # undef DEBUG
@@ -39,6 +42,22 @@
 
 namespace rack {
 namespace app {
+
+bool autoHideMenuBar = false;
+
+bool handleRoomBrightnessKey(int key, int mods, int action) {
+	const int modifiers = mods & (GLFW_MOD_CONTROL | GLFW_MOD_SUPER | GLFW_MOD_ALT);
+	const bool dimmer = key == GLFW_KEY_COMMA || key == '<';
+	const bool brighter = key == GLFW_KEY_PERIOD || key == '>';
+	if ((modifiers != GLFW_MOD_SUPER && modifiers != GLFW_MOD_CONTROL)
+	    || (!dimmer && !brighter) || !(mods & GLFW_MOD_SHIFT))
+		return false;
+	if (action != GLFW_RELEASE) {
+		const float delta = dimmer ? -.1f : .1f;
+		settings::rackBrightness = math::clamp(settings::rackBrightness + delta, 0.f, 1.f);
+	}
+	return true;
+}
 
 
 struct ResizeHandle : widget::OpaqueWidget {
@@ -104,8 +123,76 @@ struct ResizeHandle : widget::OpaqueWidget {
 };
 
 
+struct PerformanceRackScroll : RackScrollWidget {
+	int64_t soloId = -1;
+#ifdef __EMSCRIPTEN__
+	double lastNavigation = -1.0;
+	float lastZoom = 0.f;
+	math::Vec lastOffset;
+#endif
+
+	math::Rect moduleBounds(ModuleWidget* module) {
+		return math::Rect::fromMinMax(module->getRelativeOffset(math::Vec(), this),
+			module->getRelativeOffset(module->box.size, this));
+	}
+
+	void draw(const DrawArgs& args) override {
+		RackScrollWidget::draw(args);
+		auto* module = soloId >= 0 ? rackWidget->getModule(soloId) : nullptr;
+		if (!module)
+			return;
+
+		// Draw over the rest of the rack after its module and cable layers.
+		const auto bounds = moduleBounds(module);
+		nvgBeginPath(args.vg);
+		nvgRect(args.vg, 0, 0, box.size.x, box.size.y);
+		nvgRect(args.vg, bounds.pos.x, bounds.pos.y, bounds.size.x, bounds.size.y);
+		nvgPathWinding(args.vg, NVG_HOLE);
+		nvgFillColor(args.vg, nvgRGB(8, 8, 8));
+		nvgFill(args.vg);
+	}
+
+	void onButton(const ButtonEvent& e) override {
+		auto* module = soloId >= 0 ? rackWidget->getModule(soloId) : nullptr;
+		if (module && !moduleBounds(module).contains(e.pos)) {
+			e.consume(this);
+			return;
+		}
+		RackScrollWidget::onButton(e);
+	}
+};
+
+#ifdef __EMSCRIPTEN__
+RackNavigation rackNavigation() {
+	if (!APP || !APP->scene || !APP->scene->rackScroll)
+		return RackNavigation::Idle;
+	if (APP->scene->browser && APP->scene->browser->isVisible())
+		return RackNavigation::Moving;
+	const auto* scroll = static_cast<PerformanceRackScroll*>(APP->scene->rackScroll);
+	if (scroll->lastNavigation < 0.0)
+		return RackNavigation::Idle;
+	const double elapsed = system::getTime() - scroll->lastNavigation;
+	if (elapsed < .16)
+		return RackNavigation::Moving;
+	return elapsed < .42 ? RackNavigation::Settling : RackNavigation::Idle;
+}
+#endif
+
 struct Scene::Internal {
 	ResizeHandle* resizeHandle = nullptr;
+	float previousZoom = 1.f;
+	math::Vec previousOffset;
+	bool requestedFullscreen = false;
+	bool enteredFullscreen = false;
+
+	void leaveSolo(PerformanceRackScroll* scroll) {
+		scroll->soloId = -1;
+		scroll->setZoom(previousZoom);
+		scroll->setGridOffset(previousOffset);
+		if (requestedFullscreen && APP->window->isFullScreen())
+			APP->window->setFullScreen(false);
+		requestedFullscreen = enteredFullscreen = false;
+	}
 
 	bool heldArrowKeys[4] = {};
 
@@ -117,7 +204,7 @@ struct Scene::Internal {
 Scene::Scene() {
 	internal = new Internal;
 
-	rackScroll = new RackScrollWidget;
+	rackScroll = new PerformanceRackScroll;
 	addChild(rackScroll);
 
 	rack = rackScroll->rackWidget;
@@ -149,7 +236,30 @@ math::Vec Scene::getMousePos() {
 
 
 void Scene::step() {
-	if (APP->window->isFullScreen()) {
+	auto* scroll = static_cast<PerformanceRackScroll*>(rackScroll);
+	auto* solo = scroll->soloId >= 0 ? rack->getModule(scroll->soloId) : nullptr;
+	const bool fullscreen = APP->window->isFullScreen();
+	if (scroll->soloId >= 0) {
+		if (!solo || (internal->enteredFullscreen && !fullscreen)) {
+			internal->leaveSolo(scroll);
+			solo = nullptr;
+		}
+		else if (internal->requestedFullscreen && fullscreen) {
+			internal->enteredFullscreen = true;
+		}
+	}
+	if (solo) {
+		menuBar->hide();
+		rackScroll->box.pos.y = 0;
+	}
+	else if (fullscreen || autoHideMenuBar) {
+		if (autoHideMenuBar) {
+			const bool menuOpen = menuBar->isVisible() && std::any_of(children.begin(), children.end(),
+				[this](widget::Widget* child) {
+					return child != browser && child->isVisible() && dynamic_cast<ui::MenuOverlay*>(child);
+				});
+			menuBar->setVisible(mousePos.y < menuBar->box.size.y || menuOpen);
+		}
 		// Expand RackScrollWidget to cover entire screen if fullscreen
 		rackScroll->box.pos.y = 0;
 	}
@@ -165,6 +275,8 @@ void Scene::step() {
 	// Resize owned descendants
 	menuBar->box.size.x = box.size.x;
 	rackScroll->box.size = box.size.minus(rackScroll->box.pos);
+	if (solo)
+		frameRackBounds(solo->box);
 
 	// Scroll RackScrollWidget with arrow keys
 	math::Vec arrowDelta;
@@ -193,6 +305,16 @@ void Scene::step() {
 
 		rackScroll->offset += arrowDelta * arrowSpeed;
 	}
+
+#ifdef __EMSCRIPTEN__
+	const float zoom = scroll->getZoom();
+	const auto offset = scroll->getGridOffset();
+	if (scroll->lastZoom > 0.f && (std::abs(zoom - scroll->lastZoom) > .0001f
+	    || (offset - scroll->lastOffset).square() > .000001f))
+		scroll->lastNavigation = system::getTime();
+	scroll->lastZoom = zoom;
+	scroll->lastOffset = offset;
+#endif
 
 	if (remoteUtils::RemoteDetails* const remoteDetails = remoteUtils::getRemote()) {
 		idleRemote(remoteDetails);
@@ -244,7 +366,8 @@ void Scene::draw(const DrawArgs& args) {
 
 void Scene::onHover(const HoverEvent& e) {
 	mousePos = e.pos;
-	if (mousePos.y < menuBar->box.size.y) {
+	if (static_cast<PerformanceRackScroll*>(rackScroll)->soloId < 0
+	    && !autoHideMenuBar && mousePos.y < menuBar->box.size.y) {
 		menuBar->show();
 	}
 	OpaqueWidget::onHover(e);
@@ -258,6 +381,42 @@ void Scene::onDragHover(const DragHoverEvent& e) {
 
 
 void Scene::onHoverKey(const HoverKeyEvent& e) {
+#ifdef __EMSCRIPTEN__
+	if (e.action == GLFW_PRESS && e.key == GLFW_KEY_SPACE && (e.mods & RACK_MOD_MASK) == GLFW_MOD_SHIFT) {
+		auto& transport = browserTransport();
+		transport.toggle();
+		e.consume(this);
+		return;
+	}
+#endif
+
+	auto* scroll = static_cast<PerformanceRackScroll*>(rackScroll);
+	const bool soloShortcut = e.key == GLFW_KEY_F && (e.mods & RACK_MOD_MASK) == GLFW_MOD_SHIFT;
+	if (e.action == GLFW_PRESS && scroll->soloId >= 0 && (soloShortcut || e.key == GLFW_KEY_ESCAPE)) {
+		internal->leaveSolo(scroll);
+		e.consume(this);
+		return;
+	}
+	if (e.action == GLFW_PRESS && soloShortcut) {
+		auto* module = moduleUnderPointer();
+		const auto& selected = rack->getSelected();
+		if (!module && selected.size() == 1)
+			module = *selected.begin();
+		if (module && module->getModule()) {
+			internal->previousZoom = scroll->getZoom();
+			internal->previousOffset = scroll->getGridOffset();
+			scroll->soloId = module->getModule()->id;
+			internal->requestedFullscreen = !APP->window->isFullScreen();
+			if (internal->requestedFullscreen)
+				APP->window->setFullScreen(true);
+			e.consume(this);
+			return;
+		}
+	}
+	if (handleRoomBrightnessKey(e.key, e.mods, e.action)) {
+		e.consume(this);
+		return;
+	}
 	if (e.action == GLFW_PRESS && (e.mods & RACK_MOD_MASK) == 0) {
 		if (((e.key == GLFW_KEY_F || e.keyName == "f") && frameAllModules())
 		    || (e.key == GLFW_KEY_PERIOD && frameSelectedModules(true))) {

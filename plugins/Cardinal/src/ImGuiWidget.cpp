@@ -79,6 +79,8 @@ struct ImGuiWidget::PrivateData {
     bool darkMode = true;
     bool fontGenerated = false;
     bool useMonospacedFont = false;
+    int codeFont = -1;
+    ImFont* codeFonts[4] {};
     float originalScaleFactor = 0.0f;
     float scaleFactor = 0.0f;
     double lastFrameTime = 0.0;
@@ -125,7 +127,20 @@ struct ImGuiWidget::PrivateData {
             fc.OversampleH = 1;
             fc.OversampleV = 1;
             fc.PixelSnapH = true;
-            io.Fonts->AddFontFromFileTTF(fontPath.c_str(), 13.0f * scaleFactor, &fc);
+            codeFonts[0] = io.Fonts->AddFontFromFileTTF(fontPath.c_str(), 13.0f * scaleFactor, &fc);
+            if (codeFont >= 0) {
+                const char* paths[] = {
+                    "res/PdArray/res/fonts/RobotoMono-Regular.ttf",
+                    "res/LomasModules/res/Fonts/FiraMono-Bold.ttf"
+                };
+                for (int i = 0; i < 2; ++i) {
+                    const auto path = asset::system(paths[i]);
+                    if (rack::system::exists(path))
+                        codeFonts[i + 1] = io.Fonts->AddFontFromFileTTF(path.c_str(), 13.0f * scaleFactor, &fc);
+                }
+                fc.SizePixels = 13.f * scaleFactor;
+                codeFonts[3] = io.Fonts->AddFontDefault(&fc);
+            }
             io.Fonts->Build();
         }
         else
@@ -296,6 +311,12 @@ void ImGuiWidget::setUseMonospaceFont(const bool useMonoFont)
     DISTRHO_SAFE_ASSERT_RETURN(!imData->fontGenerated,);
 
     imData->useMonospacedFont = useMonoFont;
+}
+
+void ImGuiWidget::setCodeFont(int index)
+{
+    imData->codeFont = index;
+    setDirty();
 }
 
 void ImGuiWidget::onHover(const HoverEvent& e)
@@ -493,9 +514,10 @@ void ImGuiWidget::drawFramebufferCommon(const Vec& fbSize, const float scaleFact
     glPushMatrix();
     glLoadIdentity();
 
+#endif
+
     glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
     glClear(GL_COLOR_BUFFER_BIT);
-#endif
 
     io.DisplaySize = ImVec2(box.size.x * scaleFactor, box.size.y * scaleFactor);
     io.DisplayFramebufferScale = ImVec2(fbSize.x / (box.size.x * scaleFactor), fbSize.y / (box.size.y * scaleFactor));
@@ -520,6 +542,8 @@ void ImGuiWidget::drawFramebufferCommon(const Vec& fbSize, const float scaleFact
     ImGui_ImplOpenGL2_NewFrame();
 #endif
 
+    if (imData->codeFont >= 0)
+        io.FontDefault = imData->codeFonts[imData->codeFont];
     ImGui::NewFrame();
     drawImGui();
     ImGui::Render();

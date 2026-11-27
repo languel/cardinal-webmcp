@@ -1,0 +1,88 @@
+--- Rack/src/app/Browser.cpp
++++ BrowserAudio.inc
+@@ -209,8 +209,26 @@
+ 	}
+ 
+ 	void draw(const DrawArgs& args) override {
+-		// Lazily create preview when drawn
+-		createPreview();
++		// Preview construction can load assets and build a new font atlas.
++		// Spread that work across frames so the web audio callback can run.
++		static double nextPreviewTime = 0.0;
++		if (!previewWidget) {
++			const double now = system::getTime();
++			if (now < nextPreviewTime || APP->window->getFrameDurationRemaining() < .006) {
++				nvgBeginPath(args.vg);
++				nvgRoundedRect(args.vg, 0, 0, box.size.x, box.size.y, 4);
++				nvgFillColor(args.vg, nvgRGB(43, 43, 44));
++				nvgFill(args.vg);
++				nvgFontFaceId(args.vg, APP->window->uiFont->handle);
++				nvgFontSize(args.vg, 12);
++				nvgTextAlign(args.vg, NVG_ALIGN_CENTER | NVG_ALIGN_TOP);
++				nvgFillColor(args.vg, nvgRGB(202, 202, 202));
++				nvgTextBox(args.vg, 4, 8, std::max(1.f, box.size.x - 8), model->name.c_str(), nullptr);
++				return;
++			}
++			nextPreviewTime = now + .025;
++			createPreview();
++		}
+ 
+ 		// Draw shadow
+ 		nvgBeginPath(args.vg);
+@@ -469,6 +487,7 @@
+ 	ui::SequentialLayout* modelContainer;
+ 
+ 	std::string search;
++	double pendingSearch = -1.0;
+ 	std::string brand;
+ 	std::set<int> tagIds = {};
+ 	bool favorite = false;
+@@ -593,6 +612,8 @@
+ 	}
+ 
+ 	void step() override {
++		if (pendingSearch >= 0.0 && system::getTime() >= pendingSearch)
++			refresh();
+ 		box = parent->box.zeroPos().grow(math::Vec(-40, -40));
+ 
+ 		headerLayout->box.size.x = box.size.x;
+@@ -620,7 +641,7 @@
+ 		Widget::draw(args);
+ 	}
+ 
+-	bool isModelVisible(plugin::Model* model, const std::string& brand, std::set<int> tagIds, bool favorite) {
++	bool isModelVisible(plugin::Model* model, const std::string& brand, const std::set<int>& tagIds, bool favorite) {
+ 		// Filter hidden
+ 		if (model->hidden)
+ 			return false;
+@@ -657,7 +678,7 @@
+ 	};
+ 
+ 	// Determines if there is at least 1 visible Model with a given brand and tag
+-	bool hasVisibleModel(const std::string& brand, std::set<int> tagIds, bool favorite) {
++	bool hasVisibleModel(const std::string& brand, const std::set<int>& tagIds, bool favorite) {
+ 		for (const auto& pair : prefilteredModelScores) {
+ 			plugin::Model* model = pair.first;
+ 			if (isModelVisible(model, brand, tagIds, favorite))
+@@ -676,6 +697,7 @@
+ 	}
+ 
+ 	void refresh() {
++		pendingSearch = -1.0;
+ 		// Reset scroll position
+ 		modelScroll->offset = math::Vec();
+ 
+@@ -854,10 +876,12 @@
+ 
+ inline void BrowserSearchField::onChange(const ChangeEvent& e) {
+ 	browser->search = string::trim(text);
+-	browser->refresh();
++	browser->pendingSearch = system::getTime() + .075;
+ }
+ 
+ inline void BrowserSearchField::onAction(const ActionEvent& e) {
++	if (browser->pendingSearch >= 0.0)
++		browser->refresh();
+ 	// Get first ModelBox
+ 	ModelBox* mb = NULL;
+ 	for (Widget* w : browser->modelContainer->children) {

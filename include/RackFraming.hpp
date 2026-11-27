@@ -26,15 +26,23 @@ inline bool frameAllModules() {
     return !modules->children.empty() && frameRackBounds(modules->getChildrenBoundingBox());
 }
 
-inline bool frameSelectedModules(bool preferPointer) {
+inline ModuleWidget* moduleUnderPointer() {
     auto* scene = APP->scene;
-    auto* rack = scene->rack;
-    if (preferPointer && scene->rackScroll->box.contains(scene->getMousePos())) {
-        const auto mouse = rack->getMousePos();
-        for (auto* module : rack->getModules()) {
-            if (module->box.contains(mouse))
-                return frameRackBounds(module->box);
-        }
+    if (!scene->rackScroll->box.contains(scene->getMousePos()))
+        return nullptr;
+    const auto mouse = scene->rack->getMousePos();
+    for (auto* module : scene->rack->getModules()) {
+        if (module->box.contains(mouse))
+            return module;
+    }
+    return nullptr;
+}
+
+inline bool frameSelectedModules(bool preferPointer) {
+    auto* rack = APP->scene->rack;
+    if (preferPointer) {
+        if (auto* module = moduleUnderPointer())
+            return frameRackBounds(module->box);
     }
 
     const auto& selected = rack->getSelected();

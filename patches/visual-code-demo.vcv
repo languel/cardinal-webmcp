@@ -1,0 +1,96 @@
+{
+  "version": "2.6.0",
+  "zoom": 0.7,
+  "gridOffset": [
+    0,
+    0
+  ],
+  "modules": [
+    {
+      "id": 1,
+      "plugin": "livecode",
+      "model": "P5",
+      "version": "2.0",
+      "pos": [
+        0,
+        0
+      ]
+    },
+    {
+      "id": 2,
+      "plugin": "livecode",
+      "model": "Three",
+      "version": "2.0",
+      "pos": [
+        0,
+        1
+      ]
+    },
+    {
+      "id": 3,
+      "plugin": "livecode",
+      "model": "PlayCore",
+      "version": "2.0",
+      "pos": [
+        0,
+        2
+      ]
+    },
+    {
+      "id": 4,
+      "plugin": "Fundamental",
+      "model": "Scope",
+      "version": "2.0",
+      "pos": [
+        52,
+        0
+      ]
+    },
+    {
+      "id": 5,
+      "plugin": "Fundamental",
+      "model": "Scope",
+      "version": "2.0",
+      "pos": [
+        52,
+        1
+      ]
+    },
+    {
+      "id": 6,
+      "plugin": "Fundamental",
+      "model": "Scope",
+      "version": "2.0",
+      "pos": [
+        52,
+        2
+      ]
+    }
+  ],
+  "cables": [
+    {
+      "id": 1,
+      "outputModuleId": 1,
+      "outputId": 0,
+      "inputModuleId": 4,
+      "inputId": 0,
+      "color": "#90cc78"
+    },
+    {
+      "id": 2,
+      "outputModuleId": 2,
+      "outputId": 0,
+      "inputModuleId": 5,
+      "inputId": 0,
+      "color": "#74b5f4"
+    },
+    {
+      "id": 3,
+      "outputModuleId": 3,
+      "outputId": 0,
+      "inputModuleId": 6,
+      "inputId": 0,
+      "color": "#e2ba5f"
+    }
+  ]
+}

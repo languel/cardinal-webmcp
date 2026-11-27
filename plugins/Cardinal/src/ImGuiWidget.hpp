@@ -43,6 +43,7 @@ protected:
 
     void setAsCurrentContext();
     void setUseMonospaceFont(bool useMonoFont = true);
+    void setCodeFont(int index);
 
     virtual void drawImGui()
     {

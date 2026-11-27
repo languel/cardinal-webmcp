@@ -1172,13 +1172,6 @@ static void initStatic__Cardinal()
         p->addModel(modelHostParametersMap);
         p->addModel(modelHostTime);
         p->addModel(modelTextEditor);
-       #if defined(__EMSCRIPTEN__) && !defined(HEADLESS)
-        p->addModel(modelCardinalCode);
-        p->addModel(modelCardinalShader);
-       #else
-        spl.removeModule("Code");
-        spl.removeModule("Shader");
-       #endif
        #ifndef DGL_USE_GLES
         p->addModel(modelGlBars);
        #else
@@ -1218,9 +1211,32 @@ static void initStatic__Cardinal()
             modelHostParameters,
             modelHostParametersMap,
             modelHostTime,
+           #if defined(__EMSCRIPTEN__) && !defined(HEADLESS)
+            modelBrowserTransport,
+           #endif
         };
     }
 }
+
+#if defined(__EMSCRIPTEN__) && !defined(HEADLESS)
+static void initStatic__Livecode()
+{
+    Plugin* const p = new Plugin;
+    const StaticPluginLoader spl(p, "livecode");
+    if (!spl.ok()) {
+        delete p;
+        return;
+    }
+    p->addModel(modelBrowserTransport);
+    p->addModel(modelCardinalCode);
+    p->addModel(modelCardinalShader);
+    p->addModel(modelCardinalP5);
+    p->addModel(modelCardinalThree);
+    p->addModel(modelCardinalAscii);
+    p->addModel(modelCardinalStrudel);
+    p->addModel(modelLivecodeKeys);
+}
+#endif
 
 static void initStatic__Fundamental()
 {
@@ -3736,6 +3752,9 @@ static void initStatic__ZZC()
 void initStaticPlugins()
 {
     initStatic__Cardinal();
+   #if defined(__EMSCRIPTEN__) && !defined(HEADLESS)
+    initStatic__Livecode();
+   #endif
     initStatic__Fundamental();
     // initStatic__ZamAudio();
     initStatic__21kHz();
