@@ -25,4 +25,8 @@ static const NVGcolor SCHEME_YELLOW = nvgRGBf(0.76f, 0.11f, 0.22f);
 }
 }
 
-#include "../src/app/Browser.cpp"
+#ifdef __EMSCRIPTEN__
+# include "BrowserAudio.inc"
+#else
+# include "../src/app/Browser.cpp"
+#endif

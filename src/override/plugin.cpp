@@ -90,6 +90,13 @@ To request fallback slugs to be added to this list, open a GitHub issue.
 */
 using PluginModuleSlug = std::tuple<std::string, std::string>;
 static const std::map<PluginModuleSlug, PluginModuleSlug> moduleSlugFallbacks = {
+	{{"Cardinal", "BrowserTransport"}, {"livecode", "BrowserTransport"}},
+	{{"Cardinal", "Code"}, {"livecode", "Code"}},
+	{{"Cardinal", "Shader"}, {"livecode", "Shader"}},
+	{{"Cardinal", "P5"}, {"livecode", "P5"}},
+	{{"Cardinal", "Three"}, {"livecode", "Three"}},
+	{{"Cardinal", "PlayCore"}, {"livecode", "PlayCore"}},
+	{{"Cardinal", "Strudel"}, {"livecode", "Strudel"}},
 	{{"Core", "AudioInterface2"}, {"Cardinal", "HostAudio2"}},
 	{{"Core", "AudioInterface"}, {"Cardinal", "HostAudio8"}},
 	{{"Core", "AudioInterface16"}, {"Cardinal", "HostAudio8"}},

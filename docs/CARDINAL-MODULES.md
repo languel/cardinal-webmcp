@@ -174,6 +174,59 @@ Changing module knobs from Cardinal side will not send a parameter change event 
 This module works more in a "one to many" control scheme, where 1 single host parameter can control many cardinal modules, but never the other way around.  
 If you need to send a "parameter change" signal from Cardinal, use the "Host Parameters" module.
 
+### livecode
+
+The **livecode** collection by **languel** includes Browser Transport, Keys,
+Code, Strudel, and the GLSL, p5.js, Three.js, and Play.core editors. Older
+patches using the original Cardinal module names load into the collection.
+
+#### Keys
+
+Click the on-panel piano to play with the mouse and focus it for computer
+keyboard input. The labels on the keys show two octaves of shortcuts.
+**Octave** shifts both rows, and **Velocity** sets the velocity for new notes.
+Click elsewhere to release the keyboard.
+
+Patch **Pitch**, **Gate**, and **Vel** to a polyphonic voice. To send MIDI
+to a browser MIDI device, patch the same outputs to the corresponding
+inputs on **Host MIDI**, then choose **Engine → Enable/Reconnect MIDI**.
+
+### Browser Transport
+
+In the web standalone, open **Engine → Browser Transport** to enable a
+shared clock, set its tempo, and select **BEAT**, **BAR**, or **OFF** for
+linked Strudel launches, edits, and stops. **Shift+Space** starts or
+stops it with the rack focused. Stopping returns the clock to bar 1 and
+keeps linked patterns armed. These controls apply to the current browser
+session.
+
+Add the livecode **Browser Transport** module to control the same clock from
+the rack. The large display shows bar and beat above elapsed time. **RUN**
+starts or stops the clock, **SYNC** returns to bar 1, and **TAP** estimates
+tempo from taps one beat apart. The matching input jacks accept trigger
+pulses. **TAP** can follow the tempo of a patched beat clock, and **SYNC**
+aligns the downbeat. Set **METER** and **QUANTIZE** on the panel. BPM counts
+the selected beat unit, and changing meter returns the clock to bar 1.
+The output jacks mirror Host Time, with BPM available while stopped too.
+
+**Host Time** reads this clock when it is enabled. Existing patches wired to
+Host Time continue to use its **Playing**, **Reset**, **Bar**, **Beat**, and
+**Step** outputs. Patch **Bar** to the EnigmaCurry **Transport** module's
+**CLK** if you want its counter and quantized recording to count bars.
+
+Strudel follows the browser clock when its **Follow Browser Transport**
+module option is on. Click ▶ to arm while the transport is stopped or to
+queue a launch while it plays. Each pattern begins at the start of its own
+cycle on the shared grid. One linked Strudel cycle spans one bar of the
+current meter. While playing, **Ctrl+Enter** (or **Cmd+Enter**)
+prepares an edit and switches patterns at the next available boundary,
+keeping the current pattern playing in the meantime. **Ctrl+.** or clicking
+▶ again queues a stop at that boundary. An unlinked module
+can use its own `setcpm()` or **CLK** input. The linked mode takes its tempo
+from Browser Transport.
+
+[Try the browser transport demo](../patches/browser-transport-demo.vcv).
+
 ### Host Time
 
 ![screenshot](Module_HostTime.png)
@@ -249,11 +302,26 @@ It is purely cosmetic.
 This module was done early in Cardinal's development as a way to test drawing a module using OpenGL.  
 It remains as a test case and example for others to base new modules on.
 
+### Editor panel conventions
+
+Use a neutral dark gray face and let the editor or preview fill the center.
+Keep controls in a shallow strip and use the module browser for names.
+Stack CV jacks vertically, with `IN` on the left and `OUT` on the right.
+Input jacks sit directly on the panel and output jacks sit on a metal plate.
+A warm red LED shows active processing and a dim gray lens shows the idle state.
+Editors and previews stay readable as room brightness goes down. Active LEDs
+follow Rack’s Light bloom setting.
+
 ### Code
 
-Code runs a JavaScript function in Cardinal Web. Patch the two CV inputs and
-outputs to other modules, edit the JavaScript on the rack panel, then click
-**Run**. Each Code module has its own editor and can run independently.
+Code runs a JavaScript function in Cardinal Web. Patch CV, edit the JavaScript
+on the rack panel, then click **Run**. Click the lit button to stop. With focus
+in the editor or the pointer over the module, **⌘↵** runs the current source
+and **⌘.** stops. **Ctrl+Enter** and **Ctrl+.** also work.
+
+Right-click the panel and choose **Inputs** or **Outputs** to set the jack
+count from zero to six. Each defaults to two. Unplug a cable before hiding its
+jack. The patch saves both counts.
 
 ```js
 function process({ input, time }) {
@@ -261,8 +329,9 @@ function process({ input, time }) {
 }
 ```
 
-`input` contains two voltages, and `time` is seconds since Run. Return two
-voltages in output jack order. The inputs and outputs are monophonic. The
+`input` contains the configured input voltages in jack order, and `time` is
+seconds since Run. Return voltages in output jack order. Missing values output
+0 V and extra values are ignored. The inputs and outputs are monophonic. The
 browser evaluates the function up to 30 times a second and holds the last
 output between calls. Outputs are limited to ±10 V. Use this for modulation
 and control signals. Use rack modules for audio-rate processing or precise
@@ -270,8 +339,7 @@ clock and trigger timing.
 
 Run stores the source with the module after the first successful evaluation.
 **Collapse** makes the panel compact while the code continues running. **Show
-editor** expands it when there is room to its right. **Stop** sets the outputs
-to 0 V. Reopened patches start stopped and need a click on Run.
+editor** expands it when there is room to its right. Stopping sets the outputs to 0 V. Reopened patches start stopped and need a click on Run.
 
 [Try the CV demo patch](../patches/code-cv-demo.vcv) with 8vert, two Code
 modules, and Scope. Run both editors. The first halves the 6 V from 8vert, and
@@ -280,7 +348,9 @@ LFO on channel 2.
 
 ### GLSL Visualizer
 
-Edit a GLSL ES 1.00 fragment shader and click **Apply** to render it in the rack.
+Edit a GLSL ES 1.00 or 3.00 fragment shader and click **▶** to render it in the rack. Click the lit button to stop.
+The same shortcuts apply. Right-click and choose **Inputs** to set the number
+of CV jacks from zero to six. The two output jacks carry left and right shader audio.
 Start with the [GLSL visualizer demo](../patches/glsl-visualizer-demo.vcv).
 The first 8vert knob changes the ring's radius, and the second changes its phase
 and color. These are the uniforms available to a shader:
@@ -289,16 +359,59 @@ and color. These are the uniforms available to a shader:
 | --- | --- | --- |
 | `u_resolution` | `vec2` | Preview width and height in pixels |
 | `u_time` | `float` | Seconds since the shader was applied |
-| `u_cv` | `vec2` | Voltage at CV 1 and CV 2 |
+| `u_cv` | `vec2`, `vec3`, or `vec4` | First two, three, or four input voltages |
+| `u_inputs` | `float[6]` | All six input positions in jack order. Hidden or unpatched inputs supply 0 V. |
 
-**Apply** saves the last successfully compiled source with the patch. A compile
-error leaves the working shader playing. **Preview only** gives the image the
-width of the editor and preview area. **Stop** clears the preview.
+**▶** saves the last successfully compiled source with the patch. A compile
+error leaves the working shader playing. The view selector offers **Side by side**,
+**Preview only**, and **Overlay**. Overlay puts the transparent editor directly
+over the image. The view is saved with the patch.
+
+Paste Shadertoy `mainImage(out vec4 color, in vec2 pixel)` directly into the
+editor. The module supplies `iResolution`, `iTime`, `iTimeDelta`, `iFrame`,
+`iMouse`, `iDate`, and `iSampleRate`. Shadertoy texture channels with no source
+sample black. Shadertoy project imports and Buffer A–D graphs are outside the
+single editor's shader format.
+
+Twigl fragments can use `r`, `m`, `t`, `f`, `o`, and `FC`, with or without
+`void main()`. `FC.xyz`, `fragCoord.xyz`, and `fragcoord.xyz` expose the
+same coordinates as `gl_FragCoord.xyz`. `b` reads the previous frame.
+The two-target Twigl form uses `o0/o1` and `b0/b1`. The first target is shown.
+
+For GPU audio, define `vec2 mainSound(int sampleIndex, float seconds)` or
+`vec2 mainSound(float seconds)`. The shader can also define `mainImage` in
+the same editor. Return stereo samples in ±1 and patch the two audio jacks
+to a mixer or Host Audio. Stopping clears the preview and silences the jacks.
+The audio render needs the browser's graphics loop to keep running.
+
+The [shader sound demo](../patches/glsl-sound-demo.vcv) starts in Overlay and
+routes a quiet stereo tone to Host Audio and Scope. Press **▶** to start.
+
+Right-click inside a code editor to choose a theme and font, toggle line
+numbers and whitespace, or adjust code opacity. **Text background** adds an
+optional adjustable color only behind non-whitespace glyphs. The available
+fonts are Share Tech Mono, Roboto Mono, Fira Mono Bold, and Proggy Clean.
+Appearance settings apply to the current editor instance. The horizontal
+scrollbar appears only when the text exceeds the available width.
+
+Use **Alt+Z** to toggle wrap, **Cmd/Ctrl+Z** to undo, and **Cmd/Ctrl+Shift+Z**
+to redo. **Alt+Shift+F** formats the editor contents without running them.
+Formatting uses Prettier and its GLSL plugin, loaded on demand, and can be
+undone as one edit. Each editor starts with a transparent backdrop and the
+Desaturated theme. Use **Cmd+Shift++** or
+**Cmd+Shift+−** with the editor focused to change its font size. Ctrl works
+as an alternative to Cmd.
+
+Use **Cmd+Shift+,** and **Cmd+Shift+.** to adjust room brightness in
+10-percentage-point steps. Ctrl also works for these shortcuts.
+Use **Ctrl+.** to stop when the browser intercepts **Cmd+.**.
 
 Press **F** over the rack for **Frame All**, or hover a module and press **.**
 to frame it. With the pointer over empty rack space, **.** frames the selected
 modules. These commands are also in **View**. Click outside the code editor
-before using the rack shortcuts.
+before using the rack shortcuts. Hover a module and press **Shift+F** for
+single-module fullscreen. Press **Shift+F** again or **Escape** to restore
+the previous rack view.
 
 ### Text Editor
 
@@ -306,7 +419,83 @@ before using the rack shortcuts.
 
 A text editor inside Cardinal, with support for syntax highlighting.
 
-It supports the typical things you expect from an editor, such as copy&paste and undo&redo.
+It supports copy and paste, undo and redo, and **Cmd+/** or **Ctrl+/** to
+toggle comments on the selected lines. With no selection, the shortcut
+toggles the current line. The live code editors share the same shortcut.
 
 The panel is resizable using the left and right borders.  
 Moving the panel around can be done by grabbing the top status bar of the editor.
+
+### p5.js, Three.js, and Play.core ASCII
+
+These visual modules share the GLSL editor, **Side by side**, **Preview only**,
+and **Overlay**. Use **▶** or **Cmd/Ctrl+Enter** to apply a sketch and
+**Ctrl+.** to stop. Right-click the panel to set **Inputs** and **Outputs**
+from zero to six. The output jacks hold the latest voltage from the sketch
+and return to zero when stopped. They carry frame-rate CV.
+
+- **p5.js Visualizer** accepts global `setup()/draw()` sketches and
+  `function sketch(p)` for instance mode. Cardinal creates and drives the
+  p5 instance.
+- **Three.js Visualizer** provides `THREE` and a WebGL `renderer`. Define
+  `draw()` and call `renderer.render(scene, camera)` each frame. ES module
+  imports from `three` and `three/addons/` use the module’s pinned runtime version.
+- **Play.core ASCII** accepts `export const settings` and
+  `export function main(coord, context)`. Return a character or an object
+  with `char`, `color`, and optional `backgroundColor`. It supports the
+  Play.core lifecycle hooks and utility imports from `/src/modules/`.
+
+All three sketches can read `rack.input` (volts), `rack.time` (seconds),
+`rack.width`, `rack.height`, and `rack.pointer` (normalized coordinates).
+Assign `rack.output[0] = 2.5` to send 2.5 V from the first output. The ASCII
+callback also receives Play.core's `context.time` in milliseconds. The
+p5.js and Three.js runtimes and optional Play.core utility imports load
+from pinned jsDelivr URLs. Use self-contained sketches. Running code in
+an iframe isolates it from the rack's DOM and storage, but a blocking loop
+in a sketch can still stall the browser.
+
+[Try the three visual modules](../patches/visual-code-demo.vcv).
+
+### Strudel
+
+[Open the Strudel demo](../patches/strudel-demo.vcv) or add a **Strudel** module
+from the browser's module picker. Patch the top two **OUT** jacks to Host Audio
+(left above right). Click ▶ to start or stop. **Ctrl/Cmd+Enter** applies
+the editor contents and **Ctrl/Cmd+.** stops playback. Applied code is stored
+with the patch. Playback begins when you run the code.
+
+The editor supports Strudel mini-notation, named and `$:` pattern lines,
+and tempo commands such as `setcpm(120 / 4)`. The browser loads the Strudel
+runtime, built-in synths, and optional drum samples on first use.
+
+[Try the Strudel clock and audio I/O demo](../patches/strudel-io-demo.vcv).
+Connect a gate or trigger clock to **CLK**. Strudel follows its pulse interval
+after two rising edges. Set **Clock pulses per beat** in the module menu
+for clocks faster than one pulse per quarter note. The clock sets tempo with
+four beats per cycle. It holds the last tempo when pulses stop and returns to
+the pattern tempo when you unplug the cable. This is tempo following.
+
+Patch audio to **L IN** and **R IN**, then use `s("rack")` as a live sound
+source. With only **L IN** patched the signal feeds both channels. Incoming
+audio passes through the browser audio buffer and can be gated and processed
+with Strudel patterns. The top two outputs carry the default stereo mix.
+Use a separate orbit with `.orbit(2).channels("3:4")` for the lower stereo pair.
+
+Choose **Enable MIDI output** in the module menu and grant Web MIDI
+permission in a supported browser. Use `note("c4 e4").midichan(2).midi()`
+for the first MIDI output, or pass a device name to `.midi('Device Name')`.
+The output sends note-on and note-off messages.
+
+[Try the Strudel visuals demo](../patches/strudel-visuals-demo.vcv).
+Use `pianoroll()`, `punchcard()`, `spiral()`, `pitchwheel()`, `scope()`,
+`spectrum()`, `fscope()`, or `wordfall()` on a pattern. Cardinal also accepts
+the REPL's underscore forms such as `._punchcard()` and stacks those visuals
+in the module's preview. Choose **Side by side**, **Overlay**, or **Preview only**
+from the layout menu.
+
+Playing mini-notation tokens light up in the editor. Use `.color("#81b5cb")`
+or `.markcss('color: cyan; text-decoration: underline')` to style them.
+Cardinal renders text and background colors, outlines, underlines, and
+strikethrough in its rack editor. Scope and spectrum show the module's
+mix summed for analysis. During rack movement, Cardinal reuses cached
+visuals and pauses Strudel preview updates while audio continues.

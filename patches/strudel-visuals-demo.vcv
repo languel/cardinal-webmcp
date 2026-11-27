@@ -1,0 +1,102 @@
+{
+  "version": "2.6.0",
+  "zoom": 0.85,
+  "gridOffset": [
+    0,
+    0
+  ],
+  "modules": [
+    {
+      "id": 1,
+      "plugin": "livecode",
+      "model": "Strudel",
+      "version": "2.0",
+      "pos": [
+        0,
+        0
+      ],
+      "data": {
+        "layout": 0,
+        "strudelVisualLayout": true,
+        "source": "setcpm(120 / 4)\n\n$: note(\"c3 [eb3 g3] bb2 g3\")\n  .s(\"triangle\").gain(.28)\n  .color(\"#81b5cb\")\n  .markcss('outline: 2px solid cyan')\n  ._punchcard({ labels: 1 })\n  ._scope({ color: '#a8c5da' })"
+      }
+    },
+    {
+      "id": 2,
+      "plugin": "Cardinal",
+      "model": "HostAudio2",
+      "version": "2.0",
+      "params": [
+        {
+          "id": 0,
+          "value": 0.28
+        }
+      ],
+      "pos": [
+        35,
+        0
+      ],
+      "data": {
+        "dcFilter": true
+      }
+    },
+    {
+      "id": 3,
+      "plugin": "Fundamental",
+      "model": "Scope",
+      "version": "2.0",
+      "params": [
+        {
+          "id": 0,
+          "value": 2
+        },
+        {
+          "id": 4,
+          "value": 4.0
+        },
+        {
+          "id": 7,
+          "value": 1
+        }
+      ],
+      "pos": [
+        43,
+        0
+      ]
+    }
+  ],
+  "cables": [
+    {
+      "id": 1,
+      "outputModuleId": 1,
+      "outputId": 0,
+      "inputModuleId": 2,
+      "inputId": 0,
+      "color": "#90cc78"
+    },
+    {
+      "id": 2,
+      "outputModuleId": 1,
+      "outputId": 1,
+      "inputModuleId": 2,
+      "inputId": 1,
+      "color": "#74b5f4"
+    },
+    {
+      "id": 3,
+      "outputModuleId": 1,
+      "outputId": 0,
+      "inputModuleId": 3,
+      "inputId": 0,
+      "color": "#90cc78"
+    },
+    {
+      "id": 4,
+      "outputModuleId": 1,
+      "outputId": 1,
+      "inputModuleId": 3,
+      "inputId": 1,
+      "color": "#74b5f4"
+    }
+  ]
+}

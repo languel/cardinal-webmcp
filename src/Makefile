@@ -47,6 +47,7 @@ RACK_FILES += override/Engine.cpp
 RACK_FILES += override/Model.cpp
 RACK_FILES += override/ModuleWidget.cpp
 RACK_FILES += override/OpenGlWidget.cpp
+RACK_FILES += override/FramebufferWidget.cpp
 RACK_FILES += override/Scene.cpp
 
 RACK_FILES += Rack/dep/pffft/pffft.c
@@ -79,6 +80,7 @@ IGNORED_FILES += Rack/src/dsp/minblep.cpp
 IGNORED_FILES += Rack/src/engine/Engine.cpp
 IGNORED_FILES += Rack/src/plugin/Model.cpp
 IGNORED_FILES += Rack/src/widget/OpenGlWidget.cpp
+IGNORED_FILES += Rack/src/widget/FramebufferWidget.cpp
 IGNORED_FILES += Rack/src/window/Window.cpp
 IGNORED_FILES += $(wildcard Rack/src/core/*.cpp)
 
@@ -209,6 +211,16 @@ $(BUILD_DIR)/%.cpp.o: %.cpp
 	-@mkdir -p "$(shell dirname $(BUILD_DIR)/$<)"
 	@echo "Compiling $<"
 	$(SILENT)$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
+
+ifeq ($(WASM),true)
+$(BUILD_DIR)/custom/BrowserAudio.inc: Rack/src/app/Browser.cpp custom/patches/BrowserAudio.patch
+	@mkdir -p "$(dir $@)"
+	$(SILENT)patch -s -o "$@.tmp" "$<" "custom/patches/BrowserAudio.patch"
+	$(SILENT)mv "$@.tmp" "$@"
+
+$(BUILD_DIR)/custom/Browser.cpp.o: $(BUILD_DIR)/custom/BrowserAudio.inc
+$(BUILD_DIR)/custom/Browser.cpp.o: BUILD_CXX_FLAGS += -I$(abspath $(BUILD_DIR)/custom)
+endif
 
 $(BUILD_DIR)/emscripten/WasmUtils.cpp.o: BUILD_CXX_FLAGS += -fno-exceptions
 

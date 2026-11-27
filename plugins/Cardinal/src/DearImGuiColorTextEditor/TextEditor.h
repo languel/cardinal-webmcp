@@ -237,6 +237,24 @@ public:
 	inline void SetImGuiChildIgnored    (bool aValue){ mIgnoreImGuiChild     = aValue;}
 	inline bool IsImGuiChildIgnored() const { return mIgnoreImGuiChild; }
 
+	void SetShowLineNumbers(bool visible) { mShowLineNumbers = visible; }
+	void SetWrap(bool wrap) { mWrap = wrap; }
+	void SetAutoHorizontalScrollbar(bool automatic) { mAutoHorizontalScrollbar = automatic; }
+	struct PlaybackMark
+	{
+		unsigned line, firstByte, lastByte;
+		ImU32 foreground, background, outline, decoration;
+		unsigned decorationFlags;
+	};
+	void ToggleLineComment();
+	void SetPlaybackMarks(const PlaybackMark* marks, size_t count)
+	{
+		if (count) mPlaybackMarks.assign(marks, marks + count);
+		else mPlaybackMarks.clear();
+	}
+	void SetGlyphBackground(ImU32 color) { mGlyphBackground = color; }
+	void SetFontScale(float scale) { mFontScale = scale; }
+
 	inline void SetShowWhitespaces(bool aValue) { mShowWhitespaces = aValue; }
 	inline bool IsShowingWhitespaces() const { return mShowWhitespaces; }
 
@@ -382,6 +400,17 @@ private:
 	bool mHandleMouseInputs;
 	bool mIgnoreImGuiChild;
 	bool mShowWhitespaces;
+	bool mShowLineNumbers = true;
+	bool mWrap = false;
+	bool mAutoHorizontalScrollbar = false;
+	std::vector<PlaybackMark> mPlaybackMarks;
+	ImU32 mGlyphBackground = 0;
+	float mFontScale = 1.f;
+
+	struct VisualRow {
+		int line, firstByte, lastByte, firstColumn, lastColumn;
+	};
+	std::vector<VisualRow> mVisualRows;
 
 	Palette mPaletteBase;
 	Palette mPalette;

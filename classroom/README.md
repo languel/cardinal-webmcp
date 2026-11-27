@@ -17,12 +17,23 @@ defines both `HAVE_LIBZSTD` and `HAVE_ZSTD_H` so compressed patches can open.
 The original Cardinal source and dependency references are included in this repository.
 See the [license](../LICENSE) and the [upstream project](https://github.com/DISTRHO/Cardinal).
 
-## Code and performance controls
+## Live coding and performance
 
-Build CardinalNative from this source to use the [Code module](../docs/CARDINAL-MODULES.md#code)
-and the [two-module CV demo](../patches/code-cv-demo.vcv). Open the demo in the rack and
-click **Run** on each panel. Each panel has its own JavaScript editor and two CV inputs
-and outputs. Patch files store source and panel layout. Reopened patches start stopped.
+Build the browser version of CardinalNative from this source to use the
+[livecode collection by languel](../docs/CARDINAL-MODULES.md#livecode).
+Search for **livecode** in the module browser to find Code, GLSL, p5.js,
+Three.js, Play.core, Strudel, Browser Transport, and Keys. Patches saved with
+these modules under **Cardinal** can still open.
+
+- Open the [Code CV demo](../patches/code-cv-demo.vcv) to try inline JavaScript and rack CV.
+  Patch files store the source and layout. Reopened patches start stopped.
+- Open the [Browser Transport demo](../patches/browser-transport-demo.vcv) to try two
+  linked Strudel patterns. Start **Run** on the transport, then click ▶ on a
+  Strudel panel. Set quantization to **BAR** to queue edits with **Ctrl+Enter**
+  and stops with **Ctrl+.** while the current pattern plays through to the downbeat.
+- Add [Keys](../docs/CARDINAL-MODULES.md#keys) to play a rack voice with the mouse or computer
+  keyboard. Click the piano to focus it. Patch **Pitch**, **Gate**, and **Vel**
+  to **Host MIDI** and use **Engine → Enable/Reconnect MIDI** for external MIDI.
 
 Open **Edit → Bindings** to learn a keyboard key or MIDI note or CC and assign it to
 a Host Parameter slot. Use **Host Params Map** to connect that slot to a module

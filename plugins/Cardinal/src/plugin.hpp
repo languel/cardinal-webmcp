@@ -32,6 +32,10 @@ extern Model* modelCarla;
 extern Model* modelCardinalBlank;
 extern Model* modelCardinalCode;
 extern Model* modelCardinalShader;
+extern Model* modelCardinalP5;
+extern Model* modelCardinalThree;
+extern Model* modelCardinalAscii;
+extern Model* modelCardinalStrudel;
 extern Model* modelExpanderInputMIDI;
 extern Model* modelExpanderOutputMIDI;
 extern Model* modelGlBars;
@@ -45,6 +49,10 @@ extern Model* modelHostMIDIMap;
 extern Model* modelHostParameters;
 extern Model* modelHostParametersMap;
 extern Model* modelHostTime;
+#if defined(__EMSCRIPTEN__) && !defined(HEADLESS)
+extern Model* modelBrowserTransport;
+extern Model* modelLivecodeKeys;
+#endif
 extern Model* modelIldaeil;
 extern Model* modelMPV;
 extern Model* modelSassyScope;

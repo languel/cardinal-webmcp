@@ -326,18 +326,35 @@ TextEditor::Coordinates TextEditor::ScreenPosToCoordinates(const ImVec2& aPositi
 	ImVec2 origin = ImGui::GetCursorScreenPos();
 	ImVec2 local(aPosition.x - origin.x, aPosition.y - origin.y);
 
+	if (mCharAdvance.y <= 0.f)
+		return Coordinates();
 	int lineNo = std::max(0, (int)floor(local.y / mCharAdvance.y));
-
+	int firstByte = 0;
+	int lastByte = -1;
 	int columnCoord = 0;
+	float rowStartX = 0.f;
+	if (mWrap && !mVisualRows.empty())
+	{
+		const auto& row = mVisualRows[std::min(lineNo, (int)mVisualRows.size() - 1)];
+		if (row.line >= (int)mLines.size())
+			return SanitizeCoordinates(Coordinates(row.line, 0));
+		lineNo = row.line;
+		firstByte = row.firstByte;
+		lastByte = row.lastByte;
+		columnCoord = row.firstColumn;
+		rowStartX = TextDistanceToLineStart(Coordinates(lineNo, columnCoord));
+	}
 
 	if (lineNo >= 0 && lineNo < (int)mLines.size())
 	{
 		auto& line = mLines.at(lineNo);
 
-		int columnIndex = 0;
-		float columnX = 0.0f;
+		int columnIndex = firstByte;
+		float columnX = rowStartX;
+		local.x += rowStartX;
+		const int end = lastByte < 0 ? (int)line.size() : std::min(lastByte, (int)line.size());
 
-		while ((size_t)columnIndex < line.size())
+		while (columnIndex < end)
 		{
 			float columnWidth = 0.0f;
 
@@ -881,29 +898,94 @@ void TextEditor::Render()
 	auto scrollX = ImGui::GetScrollX();
 	auto scrollY = ImGui::GetScrollY();
 
-	auto lineNo = (int)floor(scrollY / mCharAdvance.y);
-	auto globalLineMax = (int)mLines.size();
-	auto lineMax = std::max(0, std::min((int)mLines.size() - 1, lineNo + (int)floor((scrollY + contentSize.y) / mCharAdvance.y)));
-
-	// Deduce mTextStart by evaluating mLines size (global lineMax) plus two spaces as text width
 	char buf[16];
-	snprintf(buf, 16, " %d ", globalLineMax);
-	mTextStart = ImGui::GetFont()->CalcTextSizeA(ImGui::GetFontSize(), FLT_MAX, -1.0f, buf, nullptr, nullptr).x + mLeftMargin;
+	snprintf(buf, sizeof(buf), " %d ", (int)mLines.size());
+	mTextStart = mLeftMargin;
+	if (mShowLineNumbers)
+		mTextStart += ImGui::CalcTextSize(buf).x;
+
+	mVisualRows.clear();
+	if (mWrap)
+	{
+		const int columns = std::max(1, (int)((contentSize.x - mTextStart - ImGui::GetStyle().ScrollbarSize) / mCharAdvance.x));
+		for (int lineNo = 0; lineNo < (int)mLines.size(); ++lineNo)
+		{
+			const auto& line = mLines[lineNo];
+			int firstByte = 0;
+			int firstColumn = 0;
+			int column = 0;
+			for (int byte = 0; byte < (int)line.size();)
+			{
+				const int nextColumn = line[byte].mChar == '\t' ? (column / mTabSize + 1) * mTabSize : column + 1;
+				if (byte > firstByte && nextColumn - firstColumn > columns)
+				{
+					mVisualRows.push_back({lineNo, firstByte, byte, firstColumn, column});
+					firstByte = byte;
+					firstColumn = column;
+				}
+				column = nextColumn;
+				byte += UTF8CharLength(line[byte].mChar);
+			}
+			mVisualRows.push_back({lineNo, firstByte, (int)line.size(), firstColumn, column});
+		}
+	}
+
+	const int rowCount = mWrap ? (int)mVisualRows.size() : (int)mLines.size();
+	int rowNo = std::max(0, (int)floor(scrollY / mCharAdvance.y));
+	const int lastRow = std::min(rowCount - 1, (int)floor((scrollY + contentSize.y) / mCharAdvance.y));
 
 	if (!mLines.empty())
 	{
+		if (!mWrap && mAutoHorizontalScrollbar) {
+			for (int line = 0; line < (int)mLines.size(); ++line)
+				longest = std::max(longest, mTextStart + TextDistanceToLineStart(Coordinates(line, GetLineMaxColumn(line))));
+		}
+		ImDrawListSplitter layers;
+		if (mGlyphBackground & IM_COL32_A_MASK) {
+			layers.Split(drawList, 2);
+			layers.SetCurrentChannel(drawList, 1);
+		}
 		float spaceSize = ImGui::GetFont()->CalcTextSizeA(ImGui::GetFontSize(), FLT_MAX, -1.0f, " ", nullptr, nullptr).x;
 
-		while (lineNo <= lineMax)
+		for (; rowNo <= lastRow; ++rowNo)
 		{
-			ImVec2 lineStartScreenPos = ImVec2(cursorScreenPos.x, cursorScreenPos.y + lineNo * mCharAdvance.y);
+			const int lineNo = mWrap ? mVisualRows[rowNo].line : rowNo;
+			const auto& line = mLines[lineNo];
+			const VisualRow row = mWrap ? mVisualRows[rowNo]
+				: VisualRow{lineNo, 0, (int)line.size(), 0, GetLineMaxColumn(lineNo)};
+			const bool finalRow = row.lastByte == (int)line.size();
+			ImVec2 lineStartScreenPos = ImVec2(cursorScreenPos.x, cursorScreenPos.y + rowNo * mCharAdvance.y);
 			ImVec2 textScreenPos = ImVec2(lineStartScreenPos.x + mTextStart, lineStartScreenPos.y);
 
-			auto& line = mLines[lineNo];
-			longest = std::max(mTextStart + TextDistanceToLineStart(Coordinates(lineNo, GetLineMaxColumn(lineNo))), longest);
-			auto columnNo = 0;
-			Coordinates lineStartCoord(lineNo, 0);
-			Coordinates lineEndCoord(lineNo, GetLineMaxColumn(lineNo));
+			const Coordinates lineStartCoord(lineNo, row.firstColumn);
+			const Coordinates lineEndCoord(lineNo, row.lastColumn);
+			const float rowStartX = TextDistanceToLineStart(lineStartCoord);
+			if (!mWrap)
+				longest = std::max(mTextStart + TextDistanceToLineStart(lineEndCoord), longest);
+
+			std::vector<const PlaybackMark*> playbackMarks;
+			for (const auto& mark : mPlaybackMarks)
+			{
+				if (mark.line != unsigned(lineNo) || mark.firstByte >= unsigned(row.lastByte)
+					|| mark.lastByte <= unsigned(row.firstByte))
+					continue;
+				playbackMarks.push_back(&mark);
+				const auto markX = [&](unsigned byte) {
+					return textScreenPos.x + TextDistanceToLineStart(
+						Coordinates(lineNo, GetCharacterColumn(lineNo, int(byte)))) - rowStartX;
+				};
+				const ImVec2 left(markX(std::max(mark.firstByte, unsigned(row.firstByte))), textScreenPos.y);
+				const ImVec2 right(markX(std::min(mark.lastByte, unsigned(row.lastByte))), textScreenPos.y + mCharAdvance.y);
+				if (mark.background)
+					drawList->AddRectFilled(left, right, mark.background);
+				if (mark.outline)
+					drawList->AddRect(left, right, mark.outline);
+				if (mark.decorationFlags & 1)
+					drawList->AddLine(ImVec2(left.x, right.y - 1), ImVec2(right.x, right.y - 1), mark.decoration);
+				if (mark.decorationFlags & 2)
+					drawList->AddLine(ImVec2(left.x, (left.y + right.y) / 2),
+						ImVec2(right.x, (left.y + right.y) / 2), mark.decoration);
+			}
 
 			// Draw selection for the current line
 			float sstart = -1.0f;
@@ -911,11 +993,11 @@ void TextEditor::Render()
 
 			assert(mState.mSelectionStart <= mState.mSelectionEnd);
 			if (mState.mSelectionStart <= lineEndCoord)
-				sstart = mState.mSelectionStart > lineStartCoord ? TextDistanceToLineStart(mState.mSelectionStart) : 0.0f;
+				sstart = mState.mSelectionStart > lineStartCoord ? TextDistanceToLineStart(mState.mSelectionStart) - rowStartX : 0.0f;
 			if (mState.mSelectionEnd > lineStartCoord)
-				ssend = TextDistanceToLineStart(mState.mSelectionEnd < lineEndCoord ? mState.mSelectionEnd : lineEndCoord);
+				ssend = TextDistanceToLineStart(mState.mSelectionEnd < lineEndCoord ? mState.mSelectionEnd : lineEndCoord) - rowStartX;
 
-			if (mState.mSelectionEnd.mLine > lineNo)
+			if (finalRow && mState.mSelectionEnd.mLine > lineNo)
 				ssend += mCharAdvance.x;
 
 			if (sstart != -1 && ssend != -1 && sstart < ssend)
@@ -959,9 +1041,12 @@ void TextEditor::Render()
 			snprintf(buf, 16, "%d  ", lineNo + 1);
 
 			auto lineNoWidth = ImGui::GetFont()->CalcTextSizeA(ImGui::GetFontSize(), FLT_MAX, -1.0f, buf, nullptr, nullptr).x;
-			drawList->AddText(ImVec2(lineStartScreenPos.x + mTextStart - lineNoWidth, lineStartScreenPos.y), mPalette[(int)PaletteIndex::LineNumber], buf);
+			if (mShowLineNumbers && row.firstByte == 0)
+				drawList->AddText(ImVec2(lineStartScreenPos.x + mTextStart - lineNoWidth, lineStartScreenPos.y), mPalette[(int)PaletteIndex::LineNumber], buf);
 
-			if (mState.mCursorPosition.mLine == lineNo)
+			if (mState.mCursorPosition.mLine == lineNo
+				&& mState.mCursorPosition.mColumn >= row.firstColumn
+				&& (finalRow || mState.mCursorPosition.mColumn < row.lastColumn))
 			{
 				auto focused = ImGui::IsWindowFocused();
 
@@ -1000,6 +1085,7 @@ void TextEditor::Render()
 								width = ImGui::GetFont()->CalcTextSizeA(ImGui::GetFontSize(), FLT_MAX, -1.0f, buf2).x;
 							}
 						}
+						cx -= rowStartX;
 						ImVec2 cstart(textScreenPos.x + cx, lineStartScreenPos.y);
 						ImVec2 cend(textScreenPos.x + cx + width, lineStartScreenPos.y + mCharAdvance.y);
 						drawList->AddRectFilled(cstart, cend, mPalette[(int)PaletteIndex::Cursor]);
@@ -1010,22 +1096,36 @@ void TextEditor::Render()
 			}
 
 			// Render colorized text
-			auto prevColor = line.empty() ? mPalette[(int)PaletteIndex::Default] : GetGlyphColor(line[0]);
-			ImVec2 bufferOffset;
+			auto prevColor = line.empty() ? mPalette[(int)PaletteIndex::Default] : GetGlyphColor(line[row.firstByte]);
+			ImVec2 bufferOffset(rowStartX, 0.f);
+			textScreenPos.x -= rowStartX;
 
-			for (int i = 0; i < line.size();)
+			auto drawRun = [&] {
+				const ImVec2 offset(textScreenPos.x + bufferOffset.x, textScreenPos.y);
+				const auto width = ImGui::CalcTextSize(mLineBuffer.c_str()).x;
+				if (mGlyphBackground & IM_COL32_A_MASK) {
+					layers.SetCurrentChannel(drawList, 0);
+					drawList->AddRectFilled(offset, ImVec2(offset.x + width, offset.y + mCharAdvance.y), mGlyphBackground);
+					layers.SetCurrentChannel(drawList, 1);
+				}
+				drawList->AddText(offset, prevColor, mLineBuffer.c_str());
+				bufferOffset.x += width;
+				mLineBuffer.clear();
+			};
+
+			for (int i = row.firstByte; i < row.lastByte;)
 			{
 				auto& glyph = line[i];
 				auto color = GetGlyphColor(glyph);
+				for (const auto* mark : playbackMarks)
+				{
+					if (mark->foreground && mark->firstByte <= unsigned(i) && unsigned(i) < mark->lastByte)
+						color = mark->foreground;
+				}
+
 
 				if ((color != prevColor || glyph.mChar == '\t' || glyph.mChar == ' ') && !mLineBuffer.empty())
-				{
-					const ImVec2 newOffset(textScreenPos.x + bufferOffset.x, textScreenPos.y + bufferOffset.y);
-					drawList->AddText(newOffset, prevColor, mLineBuffer.c_str());
-					auto textSize = ImGui::GetFont()->CalcTextSizeA(ImGui::GetFontSize(), FLT_MAX, -1.0f, mLineBuffer.c_str(), nullptr, nullptr);
-					bufferOffset.x += textSize.x;
-					mLineBuffer.clear();
-				}
+					drawRun();
 				prevColor = color;
 
 				if (glyph.mChar == '\t')
@@ -1067,18 +1167,14 @@ void TextEditor::Render()
 					while (l-- > 0)
 						mLineBuffer.push_back(line[i++].mChar);
 				}
-				++columnNo;
 			}
 
 			if (!mLineBuffer.empty())
-			{
-				const ImVec2 newOffset(textScreenPos.x + bufferOffset.x, textScreenPos.y + bufferOffset.y);
-				drawList->AddText(newOffset, prevColor, mLineBuffer.c_str());
-				mLineBuffer.clear();
-			}
-
-			++lineNo;
+				drawRun();
 		}
+
+		if (mGlyphBackground & IM_COL32_A_MASK)
+			layers.Merge(drawList);
 
 		// Draw a tooltip on known identifiers/preprocessor symbols
 		if (ImGui::IsMousePosValid())
@@ -1108,7 +1204,7 @@ void TextEditor::Render()
 	}
 
 
-	ImGui::Dummy(ImVec2((longest + 2), mLines.size() * mCharAdvance.y));
+	ImGui::Dummy(ImVec2((longest + 2), rowCount * mCharAdvance.y));
 
 	if (mScrollToCursor)
 	{
@@ -1124,14 +1220,18 @@ void TextEditor::Render(const char* aTitle, const ImVec2& aSize, bool aBorder)
 	mTextChanged = false;
 	mCursorPositionChanged = false;
 
-	ImGui::PushStyleColor(ImGuiCol_ChildBg, ImGui::ColorConvertU32ToFloat4(mPalette[(int)PaletteIndex::Background]));
+	ImGui::PushStyleColor(ImGuiCol_ChildBg, ImGui::ColorConvertU32ToFloat4(mPaletteBase[(int)PaletteIndex::Background]));
 	ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0.0f, 0.0f));
 	if (!mIgnoreImGuiChild)
 		ImGui::BeginChild(aTitle, aSize, aBorder,
-		                  ImGuiWindowFlags_HorizontalScrollbar |
-		                  ImGuiWindowFlags_AlwaysHorizontalScrollbar |
+		                  (mWrap ? 0 : ImGuiWindowFlags_HorizontalScrollbar
+		                      | (mAutoHorizontalScrollbar ? 0 : ImGuiWindowFlags_AlwaysHorizontalScrollbar)) |
 		                  ImGuiWindowFlags_NoMove |
 		                  ImGuiWindowFlags_NoNavInputs);
+
+	ImGui::SetWindowFontScale(mFontScale);
+	if (mWrap)
+		ImGui::SetScrollX(0.f);
 
 	if (mHandleKeyboardInputs)
 	{
@@ -1213,6 +1313,95 @@ void TextEditor::SetTextLines(const std::vector<std::string> & aLines)
 	mUndoIndex = 0;
 
 	Colorize();
+}
+
+void TextEditor::ToggleLineComment()
+{
+	if (mReadOnly || mLines.empty())
+		return;
+
+	const bool selected = HasSelection();
+	const auto start = selected ? mState.mSelectionStart : GetActualCursorCoordinates();
+	const auto end = selected ? mState.mSelectionEnd : start;
+	const int first = start.mLine;
+	const int last = end.mLine - (end.mLine > first && end.mColumn == 0);
+	const auto& languageMarker = mLanguageDefinition.mSingleLineComment;
+	const std::string marker = languageMarker.empty() ? "//" : languageMarker;
+	const std::string prefix = marker + ' ';
+
+	struct LineEdit {
+		int line, indent;
+	};
+	std::vector<LineEdit> edits;
+	bool uncomment = true;
+	for (int lineNo = first; lineNo <= last; ++lineNo)
+	{
+		const auto& line = mLines[lineNo];
+		const auto content = std::find_if_not(line.begin(), line.end(),
+			[](const Glyph& glyph) { return glyph.mChar == ' ' || glyph.mChar == '\t'; });
+		if (content == line.end() && first != last)
+			continue;
+		const bool commented = size_t(line.end() - content) >= marker.size()
+			&& std::equal(marker.begin(), marker.end(), content,
+				[](char ch, const Glyph& glyph) { return ch == glyph.mChar; });
+		edits.push_back({lineNo, int(content - line.begin())});
+		uncomment = uncomment && commented;
+	}
+	if (edits.empty())
+		return;
+
+	UndoRecord undo;
+	undo.mBefore = mState;
+	undo.mRemovedStart = Coordinates(first, 0);
+	undo.mRemovedEnd = Coordinates(last, GetLineMaxColumn(last));
+	undo.mRemoved = GetText(undo.mRemovedStart, undo.mRemovedEnd);
+
+	for (const auto& edit : edits)
+	{
+		auto& line = mLines[edit.line];
+		auto position = line.begin() + edit.indent;
+		int length = int(prefix.size());
+		if (uncomment)
+		{
+			length = int(marker.size());
+			if (position + length != line.end() && (position + length)->mChar == ' ')
+				++length;
+		}
+		Coordinates* points[] = {
+			&mState.mCursorPosition, &mState.mSelectionStart, &mState.mSelectionEnd,
+			&mInteractiveStart, &mInteractiveEnd
+		};
+		int indices[5];
+		for (int i = 0; i < 5; ++i)
+			indices[i] = points[i]->mLine == edit.line ? GetCharacterIndex(*points[i]) : -1;
+
+		if (uncomment)
+			line.erase(position, position + length);
+		else
+		{
+			for (const char ch : prefix)
+				position = line.insert(position, Glyph(ch, PaletteIndex::Default)) + 1;
+		}
+
+		for (int i = 0; i < 5; ++i)
+		{
+			const int index = indices[i];
+			if (index >= edit.indent)
+			{
+				const int adjusted = uncomment ? std::max(edit.indent, index - length) : index + length;
+				points[i]->mColumn = GetCharacterColumn(edit.line, adjusted);
+			}
+		}
+	}
+
+	undo.mAddedStart = Coordinates(first, 0);
+	undo.mAddedEnd = Coordinates(last, GetLineMaxColumn(last));
+	undo.mAdded = GetText(undo.mAddedStart, undo.mAddedEnd);
+	undo.mAfter = mState;
+	AddUndo(undo);
+	mTextChanged = true;
+	Colorize(first, last - first + 1);
+	EnsureCursorVisible();
 }
 
 void TextEditor::EnterCharacter(ImWchar aChar, bool aShift)
@@ -2462,12 +2651,23 @@ void TextEditor::EnsureCursorVisible()
 	auto right = (int)ceil((scrollX + width) / mCharAdvance.x);
 
 	auto pos = GetActualCursorCoordinates();
-	auto len = TextDistanceToLineStart(pos);
+	int rowNo = pos.mLine;
+	if (mWrap && !mVisualRows.empty())
+	{
+		const auto after = std::upper_bound(mVisualRows.begin(), mVisualRows.end(), pos,
+			[](const Coordinates& cursor, const VisualRow& row) {
+				return cursor < Coordinates(row.line, row.firstColumn);
+			});
+		rowNo = std::max(0, (int)(after - mVisualRows.begin()) - 1);
+	}
+	if (rowNo < top)
+		ImGui::SetScrollY(std::max(0.0f, (rowNo - 1) * mCharAdvance.y));
+	if (rowNo > bottom - 4)
+		ImGui::SetScrollY(std::max(0.0f, (rowNo + 4) * mCharAdvance.y - height));
+	if (mWrap)
+		return;
 
-	if (pos.mLine < top)
-		ImGui::SetScrollY(std::max(0.0f, (pos.mLine - 1) * mCharAdvance.y));
-	if (pos.mLine > bottom - 4)
-		ImGui::SetScrollY(std::max(0.0f, (pos.mLine + 4) * mCharAdvance.y - height));
+	const auto len = TextDistanceToLineStart(pos);
 	if (len + mTextStart < left + 4)
 		ImGui::SetScrollX(std::max(0.0f, len + mTextStart - 4));
 	if (len + mTextStart > right - 4)
@@ -3066,7 +3266,7 @@ const TextEditor::LanguageDefinition& TextEditor::LanguageDefinition::SQL()
 
 		langDef.mCommentStart = "/*";
 		langDef.mCommentEnd = "*/";
-		langDef.mSingleLineComment = "//";
+		langDef.mSingleLineComment = "--";
 
 		langDef.mCaseSensitive = false;
 		langDef.mAutoIndentation = false;

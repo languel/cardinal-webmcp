@@ -1,0 +1,79 @@
+{
+  "slug": "livecode",
+  "name": "livecode",
+  "version": "2.0.0",
+  "license": "GPL-3.0-or-later",
+  "brand": "livecode",
+  "author": "languel",
+  "authorUrl": "https://github.com/languel",
+  "sourceUrl": "https://github.com/languel/cardinal-webmcp",
+  "manualUrl": "https://github.com/languel/cardinal-webmcp/blob/main/docs/CARDINAL-MODULES.md",
+  "modules": [
+    {
+      "slug": "BrowserTransport",
+      "name": "Browser Transport",
+      "description": "Controls the browser master clock and exposes clock, timing, and phase outputs",
+      "tags": [
+        "Clock generator",
+        "Controller"
+      ]
+    },
+    {
+      "slug": "P5",
+      "name": "p5.js Visualizer",
+      "description": "p5.js live editor and CV-controlled preview",
+      "tags": [
+        "Visual"
+      ]
+    },
+    {
+      "slug": "Three",
+      "name": "Three.js Visualizer",
+      "description": "Three.js live editor and CV-controlled preview",
+      "tags": [
+        "Visual"
+      ]
+    },
+    {
+      "slug": "PlayCore",
+      "name": "Play.core ASCII",
+      "description": "ASCII shader editor and CV-controlled preview",
+      "tags": [
+        "Visual"
+      ]
+    },
+    {
+      "slug": "Strudel",
+      "name": "Strudel",
+      "description": "Live pattern editor with stereo audio output",
+      "tags": [
+        "Sequencer"
+      ]
+    },
+    {
+      "slug": "Shader",
+      "name": "GLSL Visualizer",
+      "description": "GLSL fragment editor and CV-controlled preview",
+      "tags": [
+        "Visual"
+      ]
+    },
+    {
+      "slug": "Code",
+      "name": "Code",
+      "description": "JavaScript processing for two CV inputs and outputs",
+      "tags": [
+        "Utility"
+      ]
+    },
+    {
+      "slug": "Keys",
+      "name": "Keys",
+      "description": "Play notes and chords with the computer keyboard or mouse",
+      "tags": [
+        "Controller",
+        "Polyphonic"
+      ]
+    }
+  ]
+}

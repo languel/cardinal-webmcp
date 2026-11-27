@@ -1,0 +1,102 @@
+{
+  "version": "2.6.0",
+  "zoom": 0.85,
+  "gridOffset": [
+    0,
+    0
+  ],
+  "modules": [
+    {
+      "id": 1,
+      "plugin": "livecode",
+      "model": "Shader",
+      "version": "2.0",
+      "pos": [
+        0,
+        0
+      ],
+      "data": {
+        "layout": 2,
+        "inputs": 0,
+        "source": "void mainImage(out vec4 color, in vec2 pixel) {\n    vec2 p = (2.0 * pixel - iResolution.xy) / iResolution.y;\n    float ring = smoothstep(0.04, 0.0, abs(length(p) - 0.43));\n    vec3 tint = 0.55 + 0.4 * cos(iTime + vec3(0.0, 2.0, 4.0));\n    color = vec4(vec3(0.025) + ring * tint, 1.0);\n}\n\nvec2 mainSound(int sampleIndex, float seconds) {\n    return 0.18 * sin(6.2831853 * vec2(220.0, 330.0) * seconds);\n}"
+      }
+    },
+    {
+      "id": 2,
+      "plugin": "Cardinal",
+      "model": "HostAudio2",
+      "version": "2.0",
+      "params": [
+        {
+          "id": 0,
+          "value": 0.28
+        }
+      ],
+      "pos": [
+        52,
+        0
+      ],
+      "data": {
+        "dcFilter": true
+      }
+    },
+    {
+      "id": 3,
+      "plugin": "Fundamental",
+      "model": "Scope",
+      "version": "2.0",
+      "params": [
+        {
+          "id": 0,
+          "value": 2
+        },
+        {
+          "id": 4,
+          "value": 4.0
+        },
+        {
+          "id": 7,
+          "value": 1
+        }
+      ],
+      "pos": [
+        60,
+        0
+      ]
+    }
+  ],
+  "cables": [
+    {
+      "id": 1,
+      "outputModuleId": 1,
+      "outputId": 0,
+      "inputModuleId": 2,
+      "inputId": 0,
+      "color": "#90cc78"
+    },
+    {
+      "id": 2,
+      "outputModuleId": 1,
+      "outputId": 1,
+      "inputModuleId": 2,
+      "inputId": 1,
+      "color": "#74b5f4"
+    },
+    {
+      "id": 3,
+      "outputModuleId": 1,
+      "outputId": 0,
+      "inputModuleId": 3,
+      "inputId": 0,
+      "color": "#90cc78"
+    },
+    {
+      "id": 4,
+      "outputModuleId": 1,
+      "outputId": 1,
+      "inputModuleId": 3,
+      "inputId": 1,
+      "color": "#74b5f4"
+    }
+  ]
+}

@@ -36,6 +36,7 @@
 #include <ui/MenuSeparator.hpp>
 #include <ui/SequentialLayout.hpp>
 #include <AbsoluteSlider.hpp>
+#include <BrowserTransport.hpp>
 #include <RackFraming.hpp>
 #include <ui/TextField.hpp>
 #include <ui/ProgressBar.hpp>
@@ -76,6 +77,8 @@ void Engine_setRemoteDetails(Engine*, remoteUtils::RemoteDetails*);
 }
 
 namespace app {
+extern bool autoHideMenuBar;
+
 namespace menuBar {
 
 
@@ -647,6 +650,7 @@ struct ViewButton : MenuButton {
 #endif
 
 		menu->addChild(createBoolPtrMenuItem("Show tooltips", "", &settings::tooltips));
+		menu->addChild(createBoolPtrMenuItem("Auto-hide menu bar", "", &autoHideMenuBar));
 
 		ZoomSlider* zoomSlider = new ZoomSlider;
 		zoomSlider->box.size.x = 250.0;
@@ -742,6 +746,50 @@ struct ViewButton : MenuButton {
 ////////////////////
 
 
+#ifdef __EMSCRIPTEN__
+struct BrowserTempoQuantity : Quantity {
+	void setValue(float value) override {
+		browserTransport().setBpm(value);
+	}
+	float getValue() override { return browserTransport().bpm; }
+	float getMinValue() override { return 20.f; }
+	float getMaxValue() override { return 400.f; }
+	float getDefaultValue() override { return 120.f; }
+	std::string getLabel() override { return "Tempo"; }
+	std::string getUnit() override { return " BPM"; }
+};
+
+struct BrowserTempoSlider : ui::AbsoluteSlider {
+	BrowserTempoQuantity tempo;
+	BrowserTempoSlider() {
+		quantity = &tempo;
+		box.size.x = 200.f;
+	}
+};
+
+void appendBrowserTransport(ui::Menu* menu) {
+	auto& transport = browserTransport();
+	const std::string state = !transport.enabled ? "Off" : transport.playing ? "Playing" : "Stopped";
+	menu->addChild(createSubmenuItem("Browser Transport", state, [](ui::Menu* submenu) {
+		submenu->addChild(createCheckMenuItem("Enabled", "",
+			[] { return browserTransport().enabled; },
+			[] { browserTransport().setEnabled(!browserTransport().enabled); }));
+		submenu->addChild(createMenuItem(browserTransport().playing ? "Stop" : "Play", "Shift+Space",
+			[] { browserTransport().toggle(); }));
+		submenu->addChild(createMenuItem("Return to Bar 1", "", [] { browserTransport().rewind(); }));
+		submenu->addChild(new BrowserTempoSlider);
+		for (const auto& choice : {std::make_pair("BEAT", BrowserTransport::NextBeat),
+		     std::make_pair("BAR", BrowserTransport::NextBar),
+		     std::make_pair("OFF", BrowserTransport::Immediate)}) {
+			const int grid = choice.second;
+			submenu->addChild(createCheckMenuItem(choice.first, "",
+				[grid] { return browserTransport().quantizeBeats == grid; },
+				[grid] { browserTransport().quantizeBeats = grid; }));
+		}
+	}));
+}
+#endif
+
 struct EngineButton : MenuButton {
 #ifdef HAVE_LIBLO
 	bool remoteServerStarted = false;
@@ -751,6 +799,10 @@ struct EngineButton : MenuButton {
 		ui::Menu* menu = createMenu();
 		menu->cornerFlags = BND_CORNER_TOP;
 		menu->box.pos = getAbsoluteOffset(math::Vec(0, box.size.y));
+
+#ifdef __EMSCRIPTEN__
+		appendBrowserTransport(menu);
+#endif
 
 		std::string cpuMeterText = "F3";
 		if (settings::cpuMeter)

@@ -71,9 +71,12 @@ struct ImGuiTextEditor : ImGuiWidget
     void redo();
 
 protected:
+    TextEditor& textEditor();
+    bool transparentBackground = false;
     /** @internal */
     void drawImGui() override;
     void onButton(const ButtonEvent& e) override;
+    void onSelectKey(const SelectKeyEvent& e) override;
     void onHoverScroll(const HoverScrollEvent& e) override;
     void step() override;
 };
